@@ -9,17 +9,19 @@ import numpy as np
 import yaml
 
 from tqdm import tqdm_gui as tqdm
-from model.EfficientNetv2 import EfficientNetv2
+from models.EfficientNetv2 import EfficientNetv2
+from models.ResNet import ResNet
 from loss import ArcFaceLoss
 from dataset import (get_transforms, make_dataframe, FaceDataLoader)
 
 __model__ = {
     'efficientnet' : EfficientNetv2,
+    'resnet' : ResNet
 }
 
 class FaceModel(L.LightningModule):
     def __init__(self, model: str, backbone_path: str, input_size: int,
-                 loss_config, pretrained: bool=False, lr: float=1e-4):
+                 loss_config, pretrained: bool=False, lr: float=1e-3):
         super(FaceModel, self).__init__()
         self.backbone = __model__[model](
             file_path=backbone_path if pretrained else None,
@@ -33,7 +35,7 @@ class FaceModel(L.LightningModule):
 
     def forward(self, x):
         x = self.backbone(x)
-        return F.normalize(x, dim=1)
+        return F.normalize(x)
     
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -54,8 +56,8 @@ class FaceModel(L.LightningModule):
     def configure_optimizers(self):
         # Adam with Scheduler
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
-        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
+        #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+        return {'optimizer': optimizer, }
     
     def save_model(self):
         self.backbone.save_model(self.backbone_path)
@@ -94,7 +96,8 @@ if __name__ == '__main__':
     ]
     
     # trainer
-    trainer = L.Trainer( 
+    trainer = L.Trainer(
+        **config['train']['args'], 
         callbacks=callbacks, 
         logger=wandb_logger)
     
