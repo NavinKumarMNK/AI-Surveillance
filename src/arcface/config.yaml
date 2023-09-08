@@ -1,0 +1,9 @@
+loss:
+  type: "arcface"
+  arcface:
+    s: 64.0  # scale
+    m: 0.5   # margin
+    easy_margin: false 
+
+data:
+  path: "/workspace/SurveillanceAI/data/"
