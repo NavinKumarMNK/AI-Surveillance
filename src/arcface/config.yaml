@@ -1,9 +1,21 @@
+general:
+  seed: 42
+  wandb: false
+
+wandb:
+  project: arcface
+  name: efficientnet
+  tags: ['efficientnet', 'arcface']
+
 model:
   type: efficientnet
   pretrained: true
   efficientnet:
-    input_dim: 112
-  
+    input_size: 112
+    backbone_path: /workspace/SurveillanceAI/model/efficientnet
+    pretrained: false
+    lr : 0.0001
+
 loss:
   type: arcface
   arcface:
@@ -12,11 +24,43 @@ loss:
     easy_margin: false 
 
 data:
-  seed: 42
   path: /workspace/SurveillanceAI/data/faces
   input_size: 112
   use_dali: false # need to be done
   train_val_split: 0.85
   dataloader:
-    batch_size: 64
+    batch_size: 32
     num_workers: 4
+
+train:
+  callbacks:
+    early_stopping:
+      patience: 10
+      monitor: val_loss
+      mode: min
+    model_checkpoint:
+      monitor: val_loss
+      mode: min
+      save_top_k: 1
+      save_weights_only: true
+      filename: '{epoch:02d}-{val_loss:.2f}'
+  args:
+    accelerator: gpu
+    strategy: auto
+    fast_dev_run: false
+    check_val_every_n_epoch: 1
+    num_sanity_val_steps: 0  # 100
+    enable_progress_bar: true
+    default_root_dir: /workspace/SurveillanceAI/model/efficientnet
+    max_epochs: 10
+    min_epochs: 2
+    benchmark: true
+    precision: 16
+    accumulate_grad_batches: 2
+    gradient_clip_val: 1.0
+    gradient_clip_algorithm: norm
+
+
+
+
+
