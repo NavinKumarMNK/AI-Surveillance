@@ -1,9 +1,22 @@
+model:
+  type: efficientnet
+  pretrained: true
+  efficientnet:
+    input_dim: 112
+  
 loss:
-  type: "arcface"
+  type: arcface
   arcface:
     s: 64.0  # scale
     m: 0.5   # margin
     easy_margin: false 
 
 data:
-  path: "/workspace/SurveillanceAI/data/"
+  seed: 42
+  path: /workspace/SurveillanceAI/data/faces
+  input_size: 112
+  use_dali: false # need to be done
+  train_val_split: 0.85
+  dataloader:
+    batch_size: 64
+    num_workers: 4
