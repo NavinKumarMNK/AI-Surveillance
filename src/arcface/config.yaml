@@ -1,6 +1,8 @@
 general:
   seed: 42
   wandb: false
+  num_classes: 135
+  emb_dim: 512
 
 wandb:
   project: arcface
@@ -12,16 +14,17 @@ model:
   pretrained: true
   efficientnet:
     input_size: 112
-    backbone_path: /workspace/SurveillanceAI/model/efficientnet
+    backbone_path: /workspace/SurveillanceAI/models/efficientnet
     pretrained: false
-    lr : 0.0001
+    lr : 0.0003
 
 loss:
   type: arcface
   arcface:
     s: 64.0  # scale
     m: 0.5   # margin
-    easy_margin: false 
+    easy_margin: false
+    sample_rate: 0.1
 
 data:
   path: /workspace/SurveillanceAI/data/faces
@@ -49,18 +52,30 @@ train:
     strategy: auto
     fast_dev_run: false
     check_val_every_n_epoch: 1
-    num_sanity_val_steps: 0  # 100
+    num_sanity_val_steps: 10
     enable_progress_bar: true
-    default_root_dir: /workspace/SurveillanceAI/model/efficientnet
+    default_root_dir: /workspace/SurveillanceAI/models/efficientnet
     max_epochs: 10
     min_epochs: 2
-    benchmark: true
     precision: 16
-    accumulate_grad_batches: 2
     gradient_clip_val: 1.0
+    accumulate_grad_batches: 1
     gradient_clip_algorithm: norm
 
+train_pipeline:
+  testing: true
+  optimization: true
+  post_training: true
+  
+inference_pipeline:
+  ckpt_path: fill # 
+  device: cuda
 
-
-
+vector-db:
+  db: "qdrant"
+  dim: 512
+  host:  # "http://localhost:6333"
+  collection_name: "faces"
+  
+  
 
