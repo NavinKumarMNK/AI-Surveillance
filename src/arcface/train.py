@@ -21,7 +21,9 @@ __model__ = {
 
 class FaceModel(L.LightningModule):
     def __init__(self, model: str, backbone_path: str, input_size: int,
-                 loss_config, pretrained: bool=False, lr: float=1e-3):
+                 num_classes: int, loss_config, pretrained: bool=False, 
+                 lr: float=1e-3,
+                 emb_dim: int=512):
         super(FaceModel, self).__init__()
         self.backbone = __model__[model](
             file_path=backbone_path if pretrained else None,
@@ -29,18 +31,20 @@ class FaceModel(L.LightningModule):
         )
         self.backbone_path = backbone_path
         self.lr = lr
-        self.arcface = ArcFaceLoss(**loss_config)
+        self.arcface = ArcFaceLoss(**loss_config,
+                                   num_classes=num_classes,
+                                   emb_dim=emb_dim)
         self.loss = torch.nn.CrossEntropyLoss()
         self.save_hyperparameters()    
 
     def forward(self, x):
         x = self.backbone(x)
-        return F.normalize(x)
+        return x
     
     def training_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        logits = self.arcface(logits, y)
+        logits= self.arcface(logits, y)
         loss = self.loss(logits, y)
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
@@ -49,7 +53,7 @@ class FaceModel(L.LightningModule):
         x, y = batch
         logits = self(x)
         logits = self.arcface(logits, y)
-        loss = self.loss(logits, y)
+        loss = self.loss(logits,y)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
@@ -63,7 +67,7 @@ class FaceModel(L.LightningModule):
         self.backbone.save_model(self.backbone_path)
 
 
-if __name__ == '__main__':
+def run():
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
     
@@ -79,6 +83,8 @@ if __name__ == '__main__':
     model=config['model']['type']
     model = FaceModel(model=model, 
                       loss_config=config['loss']['arcface'],
+                      num_classes=config['general']['num_classes'],
+                      emb_dim=config['general']['emb_dim'],
                       **config['model'][model])
     
     # wandb
@@ -100,7 +106,46 @@ if __name__ == '__main__':
         **config['train']['args'], 
         callbacks=callbacks, 
         logger=wandb_logger)
-    
-    # fit 
-    trainer.fit(model, dataset)
+    try:
+        trainer.fit(model, dataset)
+    except KeyboardInterrupt:
+        print("Keyboard Interrupted")
     model.save_model()
+    
+    return model, data
+
+def test():
+
+if __name__ == '__main__':
+    
+    
+    model = FaceModel.load_from_checkpoint(
+        '/workspace/SurveillanceAI/models/efficientnet/lightning_logs/version_22/checkpoints/epoch=01-val_loss=0.45.ckpt')
+    model.eval()
+    model.freeze()
+    model = model.to('cuda')
+    
+    with open('config.yaml') as f:
+        config = yaml.safe_load(f)
+    
+    data_path = config['data']['path']
+    data = make_dataframe(data_path, 0)
+    transform = get_transforms(config['data'])
+    
+    dataset = FaceDataLoader(data=data, **config['data']['dataloader'], transform=transform)
+    
+    print("Testing on entire dataset")
+    correct = 0
+    total = 0
+    for image, label in tqdm(dataset.val_dataloader()):
+        image = image.to('cuda')
+        label = label.to('cuda')
+        output = model(image)
+        output = F.normalize(output)
+        output = model.arcface(output, label)
+        _, predicted = torch.max(output.data, 1)
+        total += label.size(0)
+        correct += (predicted == label).sum().item()
+    print('Accuracy of the network on the %d test images: %f %%' % (total, 100 * correct / total))
+    
+    

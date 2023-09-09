@@ -32,10 +32,14 @@ def make_dataframe(data_path: str, train_val_split: float=0.8):
     train_image_path = []
     val_image_path = []
     
+    label_map = {}
+    
     for label in os.listdir(data_path):
         images = []
         for image in os.listdir(os.path.join(data_path, label)):
             images.append(os.path.join(data_path, label, image))
+        
+        label_map[label] = len(label_map)
         
         np.random.shuffle(images)
         split = int(len(images)*train_val_split)
@@ -49,8 +53,16 @@ def make_dataframe(data_path: str, train_val_split: float=0.8):
         train_image_path.extend(train_images)
         val_image_path.extend(val_images)
     
+    
+    
     train_df = pd.DataFrame({'image': train_image_path, 'label': train_label})
     val_df = pd.DataFrame({'image': val_image_path, 'label': val_label})
+    
+    train_df['label'] = train_df['label'].map(label_map)
+    val_df['label'] = val_df['label'].map(label_map)
+    
+    label_df = pd.DataFrame({'label': list(label_map.keys()), 'label_id': list(label_map.values())})
+    label_df.to_csv(data_path + '/../label_map.csv', index=False)
     
     return {'train': train_df.sample(frac=1), 'val': val_df.sample(frac=1)}
         
@@ -72,7 +84,8 @@ class FaceDataSet(Dataset):
             image = self.transform(image)
             
         image = image/255.0
-            
+        label = torch.tensor(label)
+        
         return image, label
     
 class FaceDataLoader(LightningDataModule):
@@ -82,10 +95,9 @@ class FaceDataLoader(LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.transform = transform
-        print(self.batch_size)
         self.setup()
         
-    def setup(self):
+    def setup(self, stage=None):
         self.train_dataset = FaceDataSet(self.data['train'], transform=self.transform)
         self.val_dataset = FaceDataSet(self.data['val'], transform=self.transform)
         
@@ -100,8 +112,8 @@ if __name__ == '__main__':
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
     
-    torch.manual_seed(config['data']['seed'])
-    np.random.seed(config['data']['seed'])
+    torch.manual_seed(config['general']['seed'])
+    np.random.seed(config['general']['seed'])
     
     data_path = config['data']['path']
     data = make_dataframe(data_path, train_val_split=config['data']['train_val_split'])
