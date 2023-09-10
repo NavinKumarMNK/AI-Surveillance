@@ -8,4 +8,4 @@ python-dotenv
 qdrant-client
 wandb
 pyyaml
-lightning
+openvino-dev[pytorch,onnx]

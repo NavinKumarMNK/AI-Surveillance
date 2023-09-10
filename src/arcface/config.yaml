@@ -51,6 +51,10 @@ train:
       save_top_k: 1
       save_weights_only: true
       filename: '{epoch:02d}-{val_loss:.2f}'
+    model_pruning:
+      pruning_fn: 'l1_unstructured'
+      amount: 0.2
+
   args:
     accelerator: gpu
     strategy: auto
@@ -73,12 +77,7 @@ train_pipeline:
   device: cuda
   model_path: /workspace/SurveillanceAI/src/arcface/models/efficientnet/arface.pt
   payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv
-
-optimization:
-  tensorrt: true
-  onnx: true
-  prune: true
-  quantization: false
+  compile_bs: 32 # batch size for compilation
 
 inference_pipeline:
   ckpt_path: fill # 

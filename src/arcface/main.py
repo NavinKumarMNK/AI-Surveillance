@@ -6,7 +6,6 @@ import yaml
 import asyncio
 import pandas as pd
 
-from optimization import ModelOptimizer
 from db import VectorDB
 from utils import wandb_push_model
 from model import FaceModel
@@ -16,7 +15,8 @@ from tqdm import tqdm
 
 class Train():
     def __init__(self, device, optimization, post_training, 
-                 push_registry, model_path, payload_map):
+                 push_registry, model_path, payload_map,
+                 compile_bs):
         self.optimization = optimization
         self.post_training = post_training
         self.device = device
@@ -24,7 +24,7 @@ class Train():
         self.model_path = model_path
         self.payload_map = pd.read_csv(payload_map)
         self.db = VectorDB()
-        self.model_optimizer = ModelOptimizer()
+        self.compile_bs = compile_bs
     
     def _upload_dict(self):
         self.dataset.setup()
@@ -64,8 +64,7 @@ class Train():
             data=self._upload_dict()
         )
         print(res)
-        
-     
+         
     
     def train(self):
         # Training : Check the config.yaml file and run the training
@@ -78,8 +77,8 @@ class Train():
         
         # optimization - Optional
         if self.optimization:
-            self.model_optimizer.optimize(self.model_path)
-        
+            self.model.finalize(batch_size=self.compile_bs)
+
         # post training
         if self.post_training:
             # vectors to db
@@ -101,7 +100,7 @@ class Inference():
         self.model.eval()
         self.model.freeze()
         self.model = self.model.to(self.device)
-        self.db = vecdb()
+        self.db = VectorDB()
         with open('config.yaml') as f:
             self.config = yaml.safe_load(f)
         
@@ -115,7 +114,7 @@ class Inference():
         with torch.no_grad():
             features = self.model(img)
             features = F.normalize(features)
-            res = vecdb.search(features)
+            res = self.db.search(features)
             return res
 
 def train():
@@ -135,7 +134,4 @@ def inference():
     return pred
 
 if __name__ == '__main__':
-    
-    
-    
     #infer = Inference(ckpt_path)

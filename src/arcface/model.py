@@ -1,8 +1,15 @@
+# author : @NavinKumarMNK
+
 import torch
 import lightning as L
+import tensorrt as trt
+
 from models.EfficientNetv2 import EfficientNetv2
 from models.ResNet import ResNet
 from loss import ArcFaceLoss
+from typing import Union
+from openvino.tools.mo import convert_model
+import openvino.runtime as ov
 
 __model__ = {
     'efficientnet' : EfficientNetv2,
@@ -15,10 +22,11 @@ class FaceModel(L.LightningModule):
                  lr: float=1e-3,
                  emb_dim: int=512):
         super(FaceModel, self).__init__()
-        self.backbone = __model__[model](
+        self.backbone: Union[EfficientNetv2, ResNet] = __model__[model](
             file_path=backbone_path if pretrained else None,
             input_size=input_size,
         )
+        self.input_size = input_size
         self.backbone_path = backbone_path
         self.lr = lr
         self.arcface = ArcFaceLoss(**loss_config,
@@ -54,4 +62,53 @@ class FaceModel(L.LightningModule):
         return {'optimizer': optimizer, }
     
     def save_model(self):
-        self.backbone.save_model(self.backbone_path)
+        self.backbone.save_model(self.backbone_path+'.pt')
+
+    def finalize(self, batch_size):
+        self.backbone.to_onnx(
+            file_path=self.backbone_path+'.onnx',
+            input_sample=torch.randn(batch_size, 3, self.input_size, self.input_size).to(self.device),
+            export_params=True,
+        )
+        
+        self.backbone.to_torchscript(
+            file_path=self.backbone_path+'_ts.pt',
+            method='script',
+            example_inputs=torch.randn(batch_size, 3, self.input_size, self.input_size).to(self.device),
+        )
+        
+        self.to_tensorrt(
+            example_inputs=torch.randn(batch_size, 3, self.input_size, self.input_size).to(self.device),
+        )
+    
+        self.to_openvino()
+    
+    def to_openvino(self):
+        core = ov.Core()
+        compile_model = core.compile_model(self.backbone_path+'.onnx', "AUTO")
+    
+        with open(self.backbone_path+'.ov', "wb") as f:
+            f.write(compile_model)
+    
+    def to_tensorrt(self, example_inputs):
+        TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
+        with trt.Builder(TRT_LOGGER) as builder, builder.create_network(
+                1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+            ) as network, trt.OnnxParser(network, TRT_LOGGER) as parser:
+            
+            builder.max_batch_size=example_inputs.shape[0]
+            with open(self.file_path+'.onnx', 'rb') as f:
+                parser.parse(f.read())
+            
+            config = builder.create_builder_config()
+            config.set_flag(trt.BuilderFlag.FP16)
+            config.max_workspace_size = 1 << 30
+            
+            network.get_input(0).shape = example_inputs.shape
+            engine = builder.build_serialized_network(network, config)
+            engine = builder.build_engine(network, config)
+            
+            with open(self.file_path + '.trt', 'wb') as f:
+                f.write(engine.serialize())
+                
+            

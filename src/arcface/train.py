@@ -50,6 +50,7 @@ def run():
         callback.LearningRateMonitor(logging_interval='step'),
         callback.DeviceStatsMonitor(),  
         callback.ModelSummary(max_depth=5),
+        callback.ModelPruning(**config['train']['callbacks']['model_pruning']),
     ]
         
     # trainer
