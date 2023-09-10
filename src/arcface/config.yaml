@@ -8,6 +8,9 @@ wandb:
   project: arcface
   name: efficientnet
   tags: ['efficientnet', 'arcface']
+  credentials: "wandb.env" # intialize credentials in this file
+  registry:
+  - name: "face"
 
 model:
   type: efficientnet
@@ -17,6 +20,7 @@ model:
     backbone_path: /workspace/SurveillanceAI/models/efficientnet
     pretrained: false
     lr : 0.0003
+  
 
 loss:
   type: arcface
@@ -63,10 +67,19 @@ train:
     gradient_clip_algorithm: norm
 
 train_pipeline:
-  testing: true
   optimization: true
   post_training: true
-  
+  push_registry: true
+  device: cuda
+  model_path: /workspace/SurveillanceAI/models/efficientnet/arface.pt
+  payload_map: /workspace/SurveillanceAI/data/label_map.csv
+
+optimization:
+  tensorrt: true
+  onnx: true
+  prune: true
+  quantization: false
+
 inference_pipeline:
   ckpt_path: fill # 
   device: cuda

@@ -13,7 +13,7 @@ import yaml
 import matplotlib.pyplot as plt
     
 
-def get_transforms(config):
+def get_train_transforms(config):
     return transforms.Compose([
         transforms.PILToTensor(),
         transforms.Resize((config['input_size'], config['input_size']), antialias=True),
@@ -24,6 +24,12 @@ def get_transforms(config):
         transforms.RandomPerspective(distortion_scale=0.2, p=0.5),
         transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)),
         transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False),
+    ])
+    
+def get_val_transforms(config):
+    return transforms.Compose([
+        transforms.PILToTensor(),
+        transforms.Resize((config['input_size'], config['input_size']), antialias=True),
     ])
 
 def make_dataframe(data_path: str, train_val_split: float=0.8):
@@ -89,17 +95,19 @@ class FaceDataSet(Dataset):
         return image, label
     
 class FaceDataLoader(LightningDataModule):
-    def __init__(self, data, batch_size=32, num_workers=4, transform=None):
+    def __init__(self, data, batch_size=32, num_workers=4, 
+                 train_transform=get_train_transforms(), 
+                 val_transform=get_val_transforms()):
         super().__init__()
         self.data = data
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.transform = transform
-        self.setup()
+        self.train_transform = train_transform
+        self.val_transform = val_transform
         
     def setup(self, stage=None):
-        self.train_dataset = FaceDataSet(self.data['train'], transform=self.transform)
-        self.val_dataset = FaceDataSet(self.data['val'], transform=self.transform)
+        self.train_dataset = FaceDataSet(self.data['train'], transform=self.train_transform)
+        self.val_dataset = FaceDataSet(self.data['val'], transform=self.val_transform)
         
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
@@ -117,9 +125,8 @@ if __name__ == '__main__':
     
     data_path = config['data']['path']
     data = make_dataframe(data_path, train_val_split=config['data']['train_val_split'])
-    transform = get_transforms(config['data'])
     
-    data_loader = FaceDataLoader(data=data, **config['data']['dataloader'], transform=transform)
+    data_loader = FaceDataLoader(data=data, **config['data']['dataloader'])
 
     for image, label in data_loader.train_dataloader():
         print(image.shape, label)

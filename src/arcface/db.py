@@ -66,6 +66,7 @@ class VectorDB():
             )
         except grpc.RpcError as e:
             print(e)
+            return False
         
         return response
 
@@ -83,7 +84,7 @@ class VectorDB():
         data : list of dict
         List{
             dict(
-                id : int (random generated),
+                id : int (random generated),  # not set through args
                 vector : list[float]
                 payload : Dict
             )
@@ -125,7 +126,7 @@ class VectorDB():
         
         return response    
     
-    async def search(self, vector: List[float], top: int=1):
+    async def search(self, vector: List[float]):
         response = await self.client.async_grpc_points.Search(
             grpc.SearchRequest(
                 collection_name=os.getenv('COLLECTION_NAME'),
