@@ -1,6 +1,8 @@
 # author : @NavinKumarMNK
 
 import os
+import uuid 
+import time
 
 def find_most_recent_subfolder(folder_path):
     subdirectories = [d for d in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, d))]
@@ -13,11 +15,6 @@ def find_most_recent_subfolder(folder_path):
         reverse=True)
     return os.path.join(folder_path, subdirectories[0])
 
-if __name__ == '__main__':
-    folder_path = '/path/to/your/folder'  # Replace with the path to your folder
-    most_recent_subfolder = find_most_recent_subfolder(folder_path)
-
-    if most_recent_subfolder:
-        print(f"The most recently created subfolder is: {most_recent_subfolder}")
-    else:
-        print("No subfolders found in the specified folder.")
+def generate_id():
+    # add time to make it unique
+    return str(uuid.uuid4())[:8] + '-' + str(int(time.time()))

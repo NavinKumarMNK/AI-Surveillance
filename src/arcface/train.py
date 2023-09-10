@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 import os
 
-from utils import find_most_recent_checkpoint
+from utils import find_most_recent_subfolder
 from tqdm import tqdm_gui as tqdm
 from model import FaceModel
 from dataset import (get_transforms, make_dataframe, FaceDataLoader)
@@ -66,7 +66,7 @@ def test():
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
     
-    ckpt_path = find_most_recent_checkpoint(
+    ckpt_path = find_most_recent_subfolder(
         config['train']['args']['default_root_dir']
     ) + '/checkpoints/' 
     

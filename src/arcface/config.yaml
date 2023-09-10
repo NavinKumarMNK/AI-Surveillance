@@ -74,8 +74,6 @@ inference_pipeline:
 vector-db:
   db: "qdrant"
   dim: 512
-  host:  # "http://localhost:6333"
   collection_name: "faces"
-  
-  
-
+  credentials: "vectordb.env" # intialize credentials in this file
+  quantization: "int8" # supported = ['int8']

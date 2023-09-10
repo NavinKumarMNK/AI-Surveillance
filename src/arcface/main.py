@@ -24,6 +24,8 @@ class Train():
         
         # post training
         if self.post_training:
+            from db import VectorDB as vecdb
+            
             pass
         
 class Inference():    
