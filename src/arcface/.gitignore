@@ -1,0 +1,11 @@
+data/faces
+data/label_map.csv
+lightning_logs
+__pycache__
+
+weights/*.pt
+weights/*.onnx
+weights/*.trt
+weights/efficientnet
+
+

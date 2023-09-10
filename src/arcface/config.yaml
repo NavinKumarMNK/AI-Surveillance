@@ -17,7 +17,7 @@ model:
   pretrained: true
   efficientnet:
     input_size: 112
-    backbone_path: /workspace/SurveillanceAI/models/efficientnet
+    backbone_path: /workspace/SurveillanceAI/src/arcface/models/efficientnet
     pretrained: false
     lr : 0.0003
   
@@ -31,7 +31,7 @@ loss:
     sample_rate: 0.1
 
 data:
-  path: /workspace/SurveillanceAI/data/faces
+  path: /workspace/SurveillanceAI/src/arcface/data/faces
   input_size: 112
   use_dali: false # need to be done
   train_val_split: 0.85
@@ -58,7 +58,7 @@ train:
     check_val_every_n_epoch: 1
     num_sanity_val_steps: 10
     enable_progress_bar: true
-    default_root_dir: /workspace/SurveillanceAI/models/efficientnet
+    default_root_dir: /workspace/SurveillanceAI/src/arcface/models/efficientnet
     max_epochs: 10
     min_epochs: 2
     precision: 16
@@ -71,8 +71,8 @@ train_pipeline:
   post_training: true
   push_registry: true
   device: cuda
-  model_path: /workspace/SurveillanceAI/models/efficientnet/arface.pt
-  payload_map: /workspace/SurveillanceAI/data/label_map.csv
+  model_path: /workspace/SurveillanceAI/src/arcface/models/efficientnet/arface.pt
+  payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv
 
 optimization:
   tensorrt: true

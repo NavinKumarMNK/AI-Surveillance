@@ -1,6 +1,5 @@
 .hypothesis
-data
-/models
+
 __pycache__
 lightning_logs
 logs

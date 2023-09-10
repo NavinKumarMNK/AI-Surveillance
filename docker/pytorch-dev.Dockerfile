@@ -25,12 +25,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 
-COPY ./pytorch_requirements.txt requirements.txt
+WORKDIR /workspace
+
+COPY ../src/arcface /workspace/arcface
+WORKDIR /workspace/arcface
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-
-WORKDIR /workspace
 
 EXPOSE 22
 EXPOSE 8888
