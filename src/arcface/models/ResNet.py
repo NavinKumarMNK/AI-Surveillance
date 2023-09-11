@@ -15,13 +15,13 @@ class ResNet(L.LightningModule):
     def __init__(self, file_path=None, input_size=112):
         super(ResNet, self).__init__()
         self.file_path = file_path
-        self.example_input_array = torch.rand(1, 3, 112, 112)
+        self.example_input_array = torch.rand(1, 3, input_size, input_size)
         self.save_hyperparameters()
         
         if file_path:
             self.model = torch.load(file_path)
         else:        
-            self.model = models.resnet50(weights=models.ResNet50_Weights)
+            self.model = models.resnet50(weights=None)
             # linear => batchnorm => relu => dropout           
             self.model.fc = nn.Sequential(
                 nn.Linear(2048, 1024),

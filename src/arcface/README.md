@@ -33,3 +33,11 @@ wandb.env - for wandb
 format -
 WANDB_API_KEY=""
 ```
+
+# RUN TRAIN & INFERENCE PIPELINE:
+
+- Change the config.yaml if needed.
+
+```bash
+python3 train.py
+```

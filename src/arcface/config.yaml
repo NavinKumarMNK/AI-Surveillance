@@ -1,6 +1,6 @@
 general:
-  seed: 42
-  wandb: false
+  seed: 999
+  wandb: true
   num_classes: 135
   emb_dim: 512
 
@@ -19,7 +19,7 @@ model:
     input_size: 112
     backbone_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet
     pretrained: false
-    lr : 0.0005
+    lr : 0.0003
   
 
 loss:
@@ -36,7 +36,7 @@ data:
   use_dali: false # need to be done
   train_val_split: 0.85
   dataloader:
-    batch_size: 32
+    batch_size: 16
     num_workers: 4
 
 train:
@@ -70,15 +70,17 @@ train:
 
 train_pipeline:
   optimization: true
-  post_training: false
+  post_training: true
   push_registry: true
   device: cuda
   model_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet.pt
   payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv
   compile_bs: 32 # batch size for compilation
+  upload_size: 1000 # number of vectors to upload at once
+
 
 inference_pipeline:
-  ckpt_path: fill # 
+  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet.pt
   device: cuda
 
 vector-db:
@@ -86,4 +88,5 @@ vector-db:
   dim: 512
   collection_name: "faces"
   credentials: "vectordb.env" # intialize credentials in this file
-  quantization: "int8" # supported = ['int8']
+  quantization: false #"int8" # supported = ['int8']
+  

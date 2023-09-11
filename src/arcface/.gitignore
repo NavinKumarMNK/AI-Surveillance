@@ -3,9 +3,14 @@ data/label_map.csv
 lightning_logs
 __pycache__
 
+logs/arcface
 weights/*.pt
 weights/*.onnx
 weights/*.trt
 weights/efficientnet
 weights/*.ov
 weights/*.bin
+
+wandb
+
+*.env

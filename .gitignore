@@ -1,9 +1,7 @@
 .hypothesis
 
 __pycache__
-lightning_logs
-logs
-wandb
+
 temp
 vectordb.env
 wandb.env

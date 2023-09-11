@@ -16,18 +16,19 @@ from tqdm import tqdm
 class Train():
     def __init__(self, optimization, post_training, 
                  push_registry, model_path, payload_map,
-                 compile_bs, device):
+                 compile_bs, device, upload_size):
         self.optimization = optimization
         self.post_training = post_training
         self.device = device
         self.push_registry = push_registry
         self.model_path = model_path
-        self.payload_map = pd.read_csv(payload_map)
+        self.payload_map = payload_map
         self.compile_bs = compile_bs
-        
+        self.upload_size= upload_size
         self.db = VectorDB()
     
     def _upload_dict(self):
+        self.dataset.batch_size = 1
         self.dataset.setup()
         self.model.eval()
         
@@ -40,50 +41,61 @@ class Train():
                 label = label.to(self.device)
                 output = self.model.backbone(image)
                 output = F.normalize(output)
-                output = output.cpu().numpy().to_list()
-                label = label
-                payload = self.payload_map[
-                    self.payload_map['label_id'] == label
-                ]['label'].values[0]
+                output = output.cpu().numpy().tolist()[0]
+                label = label.cpu().numpy().tolist()[0]
+                payload = self.payload_map.loc[
+                    self.payload_map['label_id'] == label, 'label'].values[0]
                 ret_lst.append({
-                    'payload': payload,
+                    'payload': {'label' : payload},
                     'vector': output
                 })
-        
-        return ret_lst
-    
-    def update_db(self):
-        res = self.db.verify_collection()
-        if not res:
-            self.db.create_collections()
-            res = self.db.verify_collection()
-            print(res)
+                
+                if len(ret_lst) % self.upload_size == 0:
+                    yield ret_lst
+                    ret_lst = []   
+
+        if len(ret_lst) % self.upload_size != 0:
+            yield ret_lst
+            
+            
+    async def update_db(self):
+        res = await self.db.verify_collection()
+        if res:
+            await self.db.delete_collection()
+            await self.db.create_collections()
+            await self.db.verify_collection()
+        else:
+            await self.db.create_collections()
+            await self.db.verify_collection()
         
         # upload vectors - batch addition
-        res = self.db.insert_vectors(
-            data=self._upload_dict()
-        )
-        print(res)
+        for data in self._upload_dict():
+            res = await self.db.insert_vectors(
+                data=data
+            )
+        
+        res = self.db.create_snapshot()
+        return res
          
     
-    def train(self):
+    async def train(self):
         # Training : Check the config.yaml file and run the training
         from train import run, test
         
         # run & test
-        run()
+        #run()
         self.model, self.dataset = test()
         path = self.model.save_model()
-    
+        self.payload_map = pd.read_csv(self.payload_map)
+        
         # optimization - Optional
         if self.optimization:
             path= self.model.finalize(batch_size=self.compile_bs)
-
-        # post training
+        
+        # post training - vectors to db    
         if self.post_training:
-            # vectors to db
-            self.update_db()
-            
+            response = await self.update_db()
+            print(response)            
 
         # push to registry            
         if self.push_registry:
@@ -92,10 +104,9 @@ class Train():
             )
         
 class Inference():    
-    def __init__(self, ckpt_path, device):
-        
+    def __init__(self, ckpt_path, device): 
         self.device = device
-        self.model = FaceModel.load_from_checkpoint(ckpt_path)
+        self.model = torch.load(ckpt_path)
         self.model.eval()
         
         self.model = self.model.to(self.device)
@@ -108,12 +119,14 @@ class Inference():
         transform = get_val_transforms(self.config['data']) 
         img = Image.open(img_path)
         img = transform(img)
+        img = img.type(torch.cuda.FloatTensor)
         img = img.unsqueeze(0).to(self.device)
         
         with torch.no_grad():
             features = self.model(img)
             features = F.normalize(features)
-            res = self.db.search(features)
+            features = features.cpu().numpy().tolist()[0]
+            res = await self.db.search(features)
             return res
 
 def train():    
@@ -121,18 +134,18 @@ def train():
         config = yaml.safe_load(f)
         
     train_obj = Train(**config['train_pipeline'])
-    train_obj.train()
+    asyncio.run(train_obj.train())
 
-def inference():
+async def inference():
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
 
-    img_path = '/workspace/SurveillanceAI/temp/sek22fio.png'
+    img_path = '/workspace/SurveillanceAI/src/arcface/temp/aa.jpg'
     infer = Inference(**config['inference_pipeline'])
-    pred = infer.inference(img_path)
-    return pred
-
+    pred = await infer.inference(img_path)
+    print(pred)
+    
 if __name__ == '__main__':
     train()
-    #inference()
+    asyncio.run(inference())
     

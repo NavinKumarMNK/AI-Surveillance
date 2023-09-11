@@ -21,7 +21,7 @@ def find_most_recent_subfolder(folder_path):
 
 def generate_id():
     # add time to make it unique
-    return str(uuid.uuid4())[:8] + '-' + str(int(time.time()))
+    return str(uuid.uuid4())
 
 def wandb_push_model(model_path):
     dotenv.load_dotenv('wandb.env')
@@ -41,3 +41,6 @@ def wandb_push_model(model_path):
     artifact.add_dir(model_path)
     run.log_artifact(artifact)
         
+    wandb.run.link_artifact(artifact, 
+        f"{config['wandb']['registry'][0]['name']}/{config['wandb']['name']}"
+    )

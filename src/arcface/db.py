@@ -2,6 +2,8 @@
 
 from qdrant_client import QdrantClient
 from qdrant_client import grpc
+from grpc import RpcError
+
 import yaml
 import dotenv
 import os
@@ -16,8 +18,14 @@ class VectorDB():
         path = self.config['credentials']
         dotenv.load_dotenv(path)
         self.client = QdrantClient(
-            os.getenv('URL'),
-            os.getenv('API_KEY'),
+            url=os.getenv('URL'),
+            port=6334,
+            api_key=os.getenv('API_KEY'),   
+        )
+        self.http_client = QdrantClient(
+            url=os.getenv('URL'),
+            port=6333,
+            api_key=os.getenv('API_KEY'),
         )
     
     def get_db_info(self):
@@ -35,7 +43,7 @@ class VectorDB():
             'vectors_config': grpc.VectorsConfig(
                 params = grpc.VectorParams(
                     size=self.config['dim'],
-                    distance=grpc.Distance.Cosine,
+                    distance=grpc.Distance.,
                 )
             ),
             "timeout": 10
@@ -43,7 +51,6 @@ class VectorDB():
         
         if self.config['quantization'] == 'int8':
             params.update({
-            
                 'quantization_config': grpc.QuantizationConfig(
                     scalar=grpc.ScalarQuantization(
                         type=grpc.QuantizationType.Int8
@@ -64,8 +71,7 @@ class VectorDB():
                     collection_name=os.getenv('COLLECTION_NAME')
                 )
             )
-        except grpc.RpcError as e:
-            print(e)
+        except RpcError as e:
             return False
         
         return response
@@ -95,42 +101,39 @@ class VectorDB():
         for row in data:
             payload={}
             for key, value in row['payload'].items():
-                payload[key] = grpc.Value(str_value=value)
+                payload[key] = grpc.Value(string_value=value)
             
             points.append(
             grpc.PointStruct(
-                    id=grpc.PointId(generate_id()),
+                    id=grpc.PointId(uuid=generate_id()),
                     payload=payload,
                     vectors=grpc.Vectors(
-                        vector=grpc.Vector(row['vector'])
+                        vector=grpc.Vector(data=row['vector'])
                     ),
                 )
             )
-            if len(points) % self.config['upload_size'] == 0:
-                response = await self.client.async_grpc_points.Upsert(
-                    grpc.UpsertPointsRequest(
-                        collection_name=os.getenv('COLLECTION_NAME'),
-                        points=points,
-                    )
-                )
-                points = []
-                print(response)
-            
-        if len(points) % self.config['upload_size'] != 0:
-            response = await self.client.async_grpc_points.Upsert(
-                grpc.UpsertPointsRequest(
-                    collection_name=os.getenv('COLLECTION_NAME'),
-                    points=points,
-                )
+
+        response = await self.client.async_grpc_points.Upsert(
+            grpc.UpsertPoints(
+                collection_name=os.getenv('COLLECTION_NAME'),
+                points=points,
             )
+        )
         
         return response    
     
+    def create_snapshot(self):
+        response = self.http_client.create_snapshot(
+            collection_name=os.getenv('COLLECTION_NAME'),
+        )
+        return response
+    
+    
     async def search(self, vector: List[float]):
         response = await self.client.async_grpc_points.Search(
-            grpc.SearchRequest(
+            grpc.SearchPoints(
                 collection_name=os.getenv('COLLECTION_NAME'),
-                limit=1,
+                limit=10,
                 vector=vector,
                 with_payload=grpc.WithPayloadSelector(enable=True),
             )
