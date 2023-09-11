@@ -7,10 +7,16 @@
 - Pytorch [lightningAI]
 - Qdrant
 
+# Problem
+
+- ResNet [Returning NaN At Last]
+- Efficienet
+
 # Future Work
 
 - Adaface Loss (Blured Image)
 - Dali Data Loading
+- Correct Pruning &Quantization
 
 # ENV Files:
 

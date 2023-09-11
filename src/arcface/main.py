@@ -14,29 +14,30 @@ from dataset import get_val_transforms
 from tqdm import tqdm
 
 class Train():
-    def __init__(self, device, optimization, post_training, 
+    def __init__(self, optimization, post_training, 
                  push_registry, model_path, payload_map,
-                 compile_bs):
+                 compile_bs, device):
         self.optimization = optimization
         self.post_training = post_training
         self.device = device
         self.push_registry = push_registry
         self.model_path = model_path
         self.payload_map = pd.read_csv(payload_map)
-        self.db = VectorDB()
         self.compile_bs = compile_bs
+        
+        self.db = VectorDB()
     
     def _upload_dict(self):
         self.dataset.setup()
         self.model.eval()
-        self.model.freeze()
+        
         self.model = self.model.to(self.device)
         ret_lst = []
         
         with torch.no_grad():    
             for image, label in tqdm(self.dataset.val_dataloader()):
-                image = image.to('cuda')
-                label = label.to('cuda')
+                image = image.to(self.device)
+                label = label.to(self.device)
                 output = self.model.backbone(image)
                 output = F.normalize(output)
                 output = output.cpu().numpy().to_list()
@@ -58,8 +59,7 @@ class Train():
             res = self.db.verify_collection()
             print(res)
         
-        # upload vectors
-        # batch addition
+        # upload vectors - batch addition
         res = self.db.insert_vectors(
             data=self._upload_dict()
         )
@@ -73,11 +73,11 @@ class Train():
         # run & test
         run()
         self.model, self.dataset = test()
-        self.model.save_model(self.model_path)
-        
+        path = self.model.save_model()
+    
         # optimization - Optional
         if self.optimization:
-            self.model.finalize(batch_size=self.compile_bs)
+            path= self.model.finalize(batch_size=self.compile_bs)
 
         # post training
         if self.post_training:
@@ -88,8 +88,7 @@ class Train():
         # push to registry            
         if self.push_registry:
             wandb_push_model(
-                model=self.model_path, 
-                name='arcface',
+                model_path=path,
             )
         
 class Inference():    
@@ -98,7 +97,7 @@ class Inference():
         self.device = device
         self.model = FaceModel.load_from_checkpoint(ckpt_path)
         self.model.eval()
-        self.model.freeze()
+        
         self.model = self.model.to(self.device)
         self.db = VectorDB()
         with open('config.yaml') as f:
@@ -117,7 +116,7 @@ class Inference():
             res = self.db.search(features)
             return res
 
-def train():
+def train():    
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
         
@@ -134,4 +133,6 @@ def inference():
     return pred
 
 if __name__ == '__main__':
-    #infer = Inference(ckpt_path)
+    train()
+    #inference()
+    

@@ -21,7 +21,7 @@ class ResNet(L.LightningModule):
         if file_path:
             self.model = torch.load(file_path)
         else:        
-            self.model = models.resnet50(weights=None, )
+            self.model = models.resnet50(weights=models.ResNet50_Weights)
             # linear => batchnorm => relu => dropout           
             self.model.fc = nn.Sequential(
                 nn.Linear(2048, 1024),
@@ -29,9 +29,6 @@ class ResNet(L.LightningModule):
                 nn.ReLU(),
                 nn.Dropout(0.25),
                 nn.Linear(1024, 512),
-                nn.BatchNorm1d(512),
-                nn.ReLU(),
-                nn.Dropout(0.25),
             )
         
     def forward(self, x):

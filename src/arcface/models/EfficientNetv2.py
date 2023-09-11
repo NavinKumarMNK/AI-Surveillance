@@ -12,14 +12,14 @@ from torchvision import models
 
 # Encoder
 class EfficientNetv2(L.LightningModule):
-    def __init__(self, file_path=None, input_size=112):
+    def __init__(self, file_path, input_size=112):
         super(EfficientNetv2, self).__init__()
         self.file_path = file_path
-        self.example_input_array = torch.rand(1, 3, 112, 112)
+        self.example_input_array = torch.rand(1, 3, input_size, input_size)
         self.save_hyperparameters()
         
-        if file_path:
-            self.model = torch.load(file_path)
+        if self.file_path:
+            self.model = torch.load(file_path+'.pt')
         else:        
             self.model = models.efficientnet_v2_s(weights=None)
             # linear => batchnorm => relu => dropout           
@@ -29,9 +29,6 @@ class EfficientNetv2(L.LightningModule):
                 nn.ReLU(),
                 nn.Dropout(0.25),
                 nn.Linear(2048, 512),
-                nn.BatchNorm1d(512),
-                nn.ReLU(),
-                nn.Dropout(0.25),
             )
         
     def forward(self, x):

@@ -3,13 +3,15 @@
 import torch
 import lightning as L
 import tensorrt as trt
+import openvino.runtime as ov
+import os 
 
 from models.EfficientNetv2 import EfficientNetv2
 from models.ResNet import ResNet
 from loss import ArcFaceLoss
 from typing import Union
 from openvino.tools.mo import convert_model
-import openvino.runtime as ov
+from typing import List
 
 __model__ = {
     'efficientnet' : EfficientNetv2,
@@ -18,7 +20,7 @@ __model__ = {
 
 class FaceModel(L.LightningModule):
     def __init__(self, model: str, backbone_path: str, input_size: int,
-                 num_classes: int, loss_config, pretrained: bool=False, 
+                 num_classes: int, loss_config, pretrained: bool, 
                  lr: float=1e-3,
                  emb_dim: int=512):
         super(FaceModel, self).__init__()
@@ -61,10 +63,15 @@ class FaceModel(L.LightningModule):
         #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
         return {'optimizer': optimizer, }
     
-    def save_model(self):
-        self.backbone.save_model(self.backbone_path+'.pt')
+    def save_model(self) -> str:
+        self.backbone.save_model(self.backbone_path)
+        return self.backbone_path
 
-    def finalize(self, batch_size):
+    def load_model(self):
+        self.backbone = torch.load(self.backbone_path+'.pt')
+        
+
+    def finalize(self, batch_size) -> str:
         self.backbone.to_onnx(
             file_path=self.backbone_path+'.onnx',
             input_sample=torch.randn(batch_size, 3, self.input_size, self.input_size).to(self.device),
@@ -82,13 +89,15 @@ class FaceModel(L.LightningModule):
         )
     
         self.to_openvino()
+        
+        return os.path.dirname(self.backbone_path)
+        
     
     def to_openvino(self):
         core = ov.Core()
-        compile_model = core.compile_model(self.backbone_path+'.onnx', "AUTO")
+        ov_model = convert_model(self.backbone_path+'.onnx')
+        ov.serialize(ov_model, self.backbone_path+'.xml')
     
-        with open(self.backbone_path+'.ov', "wb") as f:
-            f.write(compile_model)
     
     def to_tensorrt(self, example_inputs):
         TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
@@ -97,7 +106,7 @@ class FaceModel(L.LightningModule):
             ) as network, trt.OnnxParser(network, TRT_LOGGER) as parser:
             
             builder.max_batch_size=example_inputs.shape[0]
-            with open(self.file_path+'.onnx', 'rb') as f:
+            with open(self.backbone_path+'.onnx', 'rb') as f:
                 parser.parse(f.read())
             
             config = builder.create_builder_config()
@@ -108,7 +117,7 @@ class FaceModel(L.LightningModule):
             engine = builder.build_serialized_network(network, config)
             engine = builder.build_engine(network, config)
             
-            with open(self.file_path + '.trt', 'wb') as f:
+            with open(self.backbone_path + '.trt', 'wb') as f:
                 f.write(engine.serialize())
                 
             

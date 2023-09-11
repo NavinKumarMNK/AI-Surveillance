@@ -13,7 +13,7 @@ class VectorDB():
         with open('config.yaml') as f:
             config = yaml.safe_load(f)
         self.config = config['vector-db']
-        path = self.config['crendentials']
+        path = self.config['credentials']
         dotenv.load_dotenv(path)
         self.client = QdrantClient(
             os.getenv('URL'),

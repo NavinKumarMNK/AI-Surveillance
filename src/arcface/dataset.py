@@ -12,6 +12,9 @@ import torch
 import yaml
 import matplotlib.pyplot as plt
     
+with open('config.yaml') as f:
+    config = yaml.safe_load(f)
+
 
 def get_train_transforms(config):
     return transforms.Compose([
@@ -96,8 +99,8 @@ class FaceDataSet(Dataset):
     
 class FaceDataLoader(LightningDataModule):
     def __init__(self, data, batch_size=32, num_workers=4, 
-                 train_transform=get_train_transforms(), 
-                 val_transform=get_val_transforms()):
+                 train_transform=get_train_transforms(config['data']), 
+                 val_transform=get_val_transforms(config['data'])):
         super().__init__()
         self.data = data
         self.batch_size = batch_size

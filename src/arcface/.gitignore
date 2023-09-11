@@ -7,5 +7,5 @@ weights/*.pt
 weights/*.onnx
 weights/*.trt
 weights/efficientnet
-
-
+weights/*.ov
+weights/*.bin
