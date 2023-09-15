@@ -37,6 +37,7 @@ EXPOSE 8554
 EXPOSE 8000
 
 WORKDIR /workspace
+RUN /opt/nvidia/graph-composer/extension-dev/install_dependencies.sh --allow-root
 
 RUN apt-get update && apt-get upgrade -y
 CMD ["tail", "-f", "/dev/null"]

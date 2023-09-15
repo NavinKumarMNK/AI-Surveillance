@@ -267,6 +267,5 @@ outputs/
 wandb/
 runs/
 runs-dragon/
-evaluation/
 weights/
 runs-from-phoenix/
