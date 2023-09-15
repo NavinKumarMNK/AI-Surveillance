@@ -83,7 +83,7 @@ class Train():
         from train import run, test
         
         # run & test
-        #run()
+        run()
         self.model, self.dataset = test()
         path = self.model.save_model()
         self.payload_map = pd.read_csv(self.payload_map)
@@ -118,8 +118,9 @@ class Inference():
     async def inference(self, img_path):
         transform = get_val_transforms(self.config['data']) 
         img = Image.open(img_path)
+        img = img.convert('RGB')
         img = transform(img)
-        img = img.type(torch.cuda.FloatTensor)
+        print(img)
         img = img.unsqueeze(0).to(self.device)
         
         with torch.no_grad():

@@ -1,6 +1,6 @@
 general:
   seed: 999
-  wandb: true
+  wandb: false
   num_classes: 135
   emb_dim: 512
 
@@ -36,7 +36,7 @@ data:
   use_dali: false # need to be done
   train_val_split: 0.85
   dataloader:
-    batch_size: 16
+    batch_size: 32
     num_workers: 4
 
 train:
@@ -63,15 +63,15 @@ train:
     num_sanity_val_steps: 10
     enable_progress_bar: true
     default_root_dir: /workspace/SurveillanceAI/src/arcface/logs
-    max_epochs: 5
-    min_epochs: 2
+    max_epochs: 100
+    min_epochs: 1
     precision: 16-mixed
     accumulate_grad_batches: 1
 
 train_pipeline:
-  optimization: true
+  optimization: false
   post_training: true
-  push_registry: true
+  push_registry: false
   device: cuda
   model_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet.pt
   payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv

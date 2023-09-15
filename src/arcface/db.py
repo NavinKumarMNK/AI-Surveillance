@@ -43,7 +43,7 @@ class VectorDB():
             'vectors_config': grpc.VectorsConfig(
                 params = grpc.VectorParams(
                     size=self.config['dim'],
-                    distance=grpc.Distance.,
+                    distance=grpc.Distance.Cosine,
                 )
             ),
             "timeout": 10
