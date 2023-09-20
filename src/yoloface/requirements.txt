@@ -3,7 +3,7 @@
 # Base ----------------------------------------
 matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python>=4.1.1
+opencv-python-headless==4.8.0.74
 Pillow>=7.1.2
 PyYAML>=5.3.1
 requests>=2.23.0
@@ -37,3 +37,6 @@ thop  # FLOPs computation
 # albumentations>=1.0.3
 # pycocotools>=2.0  # COCO mAP
 # roboflow
+
+onnxsim
+onnx_graphsurgeon

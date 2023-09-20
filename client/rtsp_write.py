@@ -34,10 +34,10 @@ try:
     # Define the GStreamer pipeline for RTSP streaming
     if TYPE == 265:
         pipeline = ('appsrc ! videoconvert ! video/x-raw,format=I420 ! x265enc speed-preset=ultrafast bitrate=600 key-int-max='
-                    + str(fps * 2) + ' ! video/x-h265 ! rtspclientsink location=rtsp://localhost:'+ str(PORT) + '/mystream')
+                    + str(fps * 2) + ' ! video/x-h265 ! rtspclientsink location=rtsp://192.168.1.10:'+ str(PORT) + '/mystream')
     elif TYPE == 264:
         pipeline = ('appsrc ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast bitrate=600 key-int-max='
-                + str(fps * 2) + ' ! video/x-h264,profile=baseline ! rtspclientsink location=rtsp://localhost:'+ str(PORT) + '/mystream')
+                + str(fps * 2) + ' ! video/x-h264,profile=baseline ! rtspclientsink location=rtsp://192.168.1.10:'+ str(PORT) + '/mystream')
 
     cap = cv2.VideoCapture(0)  # params(CAMERA_INDEX)
     

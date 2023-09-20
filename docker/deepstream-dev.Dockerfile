@@ -22,19 +22,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     htop \ 
     && rm -rf /var/lib/apt/lists/*
 
-COPY ../requirements.txt requirements.txt
-
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+
 
 WORKDIR /opt/nvidia/deepstream/deepstream
 RUN ./install.sh
 RUN ./user_additional_install.sh
-RUN ./user_deepstream_python_apps_install.sh -b
 
 EXPOSE 22
 EXPOSE 8554
 EXPOSE 8000
+EXPOSE 9001
 
 WORKDIR /workspace
 RUN /opt/nvidia/graph-composer/extension-dev/install_dependencies.sh --allow-root

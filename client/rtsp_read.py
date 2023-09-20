@@ -1,6 +1,6 @@
 import cv2
 
-rtsp_url = "rtsp://localhost:8555/mystream"
+rtsp_url = "rtsp://localhost:8554/ds-test"
 cap = cv2.VideoCapture(rtsp_url)
 if not cap.isOpened():
     print("Error: Could not open RTSP stream.")
@@ -13,6 +13,7 @@ while True:
         print("Error: Could not read frame.")
         break
 
+    
     cv2.imshow("RTSP Stream", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

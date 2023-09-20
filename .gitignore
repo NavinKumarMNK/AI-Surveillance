@@ -5,3 +5,6 @@ __pycache__
 temp
 vectordb.env
 wandb.env
+examples
+
+/weights/yolov7-face-tiny.trt
