@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --upgrade pip
 
+ENV CUDA_VER=12.1
 
 WORKDIR /opt/nvidia/deepstream/deepstream
 RUN ./install.sh
@@ -34,8 +35,15 @@ EXPOSE 8554
 EXPOSE 8000
 EXPOSE 9001
 
-WORKDIR /workspace
 RUN /opt/nvidia/graph-composer/extension-dev/install_dependencies.sh --allow-root
+RUN apt-get install build-essential -y
 
-RUN apt-get update && apt-get upgrade -y
+WORKDIR /workspace
+COPY deepstream /workspace/SurveillanceAI/deepstream
+
+WORKDIR /workspace/SurveillanceAI/deepstream
+RUN make -C src && make
+
+
+
 CMD ["tail", "-f", "/dev/null"]
