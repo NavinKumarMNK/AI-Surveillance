@@ -11,18 +11,6 @@ dependencies:
 - extension: NvDsOutputSinkExt
   uuid: 3fc9ad87-03e7-47a8-bbfc-8501c3f7ff2f
   version: 1.3.0
-- extension: NvDsMuxDemuxExt
-  uuid: 89b8398c-5820-4051-835c-a91f2d49766b
-  version: 1.3.0
-- extension: NvDsInferenceExt
-  uuid: 0b02963e-c24e-4c13-ace0-c4cdf36c7c71
-  version: 1.3.0
-- extension: NvDsTrackerExt
-  uuid: f5aaeb53-e9b8-4317-87d1-9549d67c1638
-  version: 1.3.0
-- extension: NvDsCloudMsgExt
-  uuid: d16b1366-dba2-47f6-95fc-b09b39f885de
-  version: 1.3.0
 ---
 components:
 - name: Multi Source Input0
@@ -38,8 +26,8 @@ components:
 name: Multi Source Input
 ui_property:
   position:
-    x: -79.22593688964844
-    y: -23.237796783447266
+    x: 8.476114273071289
+    y: 100.8285140991211
 ---
 components:
 - name: nv_ds_rtsp_out3
@@ -54,150 +42,18 @@ components:
 name: NvDsRtspOut
 ui_property:
   position:
-    x: 1335.7705078125
-    y: -78.95109558105469
----
-components:
-- name: Deepstream Scheduler7
-  type: nvidia::deepstream::NvDsScheduler
-name: scheduler
-ui_property:
-  position:
-    x: 364.8752746582031
-    y: -170.46249389648438
----
-components:
-- name: New Stream Muxer3
-  parameters:
-    in-%u: On Request Data Input4
-    out: Static Data Output5
-  type: nvidia::deepstream::NvDsStreamMuxNew
-- name: On Request Data Input4
-  type: nvidia::deepstream::NvDsOnRequestInput
-- name: Static Data Output5
-  type: nvidia::deepstream::NvDsStaticOutput
-name: New Stream Muxer
-ui_property:
-  position:
-    x: 232.8562774658203
-    y: 10.077486038208008
+    x: 328.2774658203125
+    y: 145.77603149414062
 ---
 components:
 - name: Multi Data Connection6
   parameters:
     source: Multi Source Input/Multiple Data Output1
-    target: New Stream Muxer/On Request Data Input4
+    target: NvDsRtspOut/On Request Data Input5
   type: nvidia::deepstream::NvDsMultiSrcConnection
 name: node0
 ---
 components:
-- name: Video Inference7
-  parameters:
-    model-engine-file: /workspace/SurveillanceAI/deepstream/weights/yolov7-face-tiny.trt
-    model-updated-signal: Model Updated Signal/Model Updated Signal17
-    video-in: Static Data Input9
-    video-out: Static Data Output8
-  type: nvidia::deepstream::NvDsInferVideo
-- name: Static Data Output8
-  type: nvidia::deepstream::NvDsStaticOutput
-- name: Static Data Input9
-  type: nvidia::deepstream::NvDsStaticInput
-name: Face_Detector
-ui_property:
-  position:
-    x: 468.57403564453125
-    y: -29.708559036254883
----
-components:
-- name: Deepstream Data Connection10
-  parameters:
-    source: New Stream Muxer/Static Data Output5
-    target: Face_Detector/Static Data Input9
-  type: nvidia::deepstream::NvDsConnection
-name: node1
----
-components:
-- name: Object Tracker13
-  parameters:
-    video-in: Static Data Input14
-    video-out: Static Data Output15
-  type: nvidia::deepstream::NvDsTracker
-- name: Static Data Input14
-  type: nvidia::deepstream::NvDsStaticInput
-- name: Static Data Output15
-  type: nvidia::deepstream::NvDsStaticOutput
-name: Object Tracker
-ui_property:
-  position:
-    x: 751.8126220703125
-    y: -4.6303911209106445
----
-components:
-- name: Deepstream Data Connection16
-  parameters:
-    source: Face_Detector/Static Data Output8
-    target: Object Tracker/Static Data Input14
-  type: nvidia::deepstream::NvDsConnection
-name: node2
----
-components:
-- name: Model Updated Signal17
-  type: nvidia::deepstream::NvDsModelUpdatedSignal
-name: Model Updated Signal
-ui_property:
-  position:
-    x: 784.8662109375
-    y: 196.2510223388672
----
-components:
-- name: Video Inference19
-  parameters:
-    video-in: Static Data Input21
-    video-out: Static Data Output20
-  type: nvidia::deepstream::NvDsInferVideo
-- name: Static Data Output20
-  type: nvidia::deepstream::NvDsStaticOutput
-- name: Static Data Input21
-  type: nvidia::deepstream::NvDsStaticInput
-name: Face_Recognizer
-ui_property:
-  position:
-    x: 1001.98193359375
-    y: -31.560361862182617
----
-components:
-- name: Deepstream Data Connection22
-  parameters:
-    source: Object Tracker/Static Data Output15
-    target: Face_Recognizer/Static Data Input21
-  type: nvidia::deepstream::NvDsConnection
-name: node3
----
-components:
-- name: Deepstream Data Connection23
-  parameters:
-    source: Face_Recognizer/Static Data Output20
-    target: NvDsRtspOut/On Request Data Input4
-  type: nvidia::deepstream::NvDsConnection
-name: node4
----
-components:
-- name: Cloud Message Converter and Broker29
-  parameters:
-    in: Static Data Input30
-  type: nvidia::deepstream::NvDsMsgConvBroker
-- name: Static Data Input30
-  type: nvidia::deepstream::NvDsStaticInput
-name: Cloud Message Converter and Broker
-ui_property:
-  position:
-    x: 1328.1865234375
-    y: 90.42469024658203
----
-components:
-- name: Deepstream Data Connection31
-  parameters:
-    source: Face_Recognizer/Static Data Output20
-    target: Cloud Message Converter and Broker/Static Data Input30
-  type: nvidia::deepstream::NvDsConnection
-name: node6
+- name: Deepstream Scheduler7
+  type: nvidia::deepstream::NvDsScheduler
+name: scheduler

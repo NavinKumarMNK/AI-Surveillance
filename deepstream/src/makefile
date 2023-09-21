@@ -1,5 +1,6 @@
 ################################################################################
-# Copyright (c) 2018-2023, NVIDIA CORPORATION. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -18,55 +19,39 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-#
-# Edited by Marcos Luciano
-# https://www.github.com/marcoslucianops
 ################################################################################
 
-CUDA_VER?=
-ifeq ($(CUDA_VER),)
-	$(error "CUDA_VER is not set")
-endif
+CC:= g++
+NVCC:=/usr/local/cuda/bin/nvcc
 
-CFLAGS:= -Wall -Wfatal-errors -fPIC -Wno-deprecated-declarations
+CFLAGS:= -Wall -std=c++11 -shared -fPIC -Wno-error=deprecated-declarations
+CFLAGS+= -I/opt/nvidia/deepstream/deepstream/sources/includes/ -I/usr/local/cuda/include
 
-APP:= deepstream
+CUFLAGS:= -std=c++14 -shared 
+CUFLAGS+= -I/opt/nvidia/deepstream/deepstream/sources/includes/ -I/usr/local/cuda/include
 
-DS_SDK_ROOT:= /opt/nvidia/deepstream/deepstream
-
-LIB_INSTALL_DIR?= $(DS_SDK_ROOT)/lib/
-
-TARGET_DEVICE= $(shell gcc -dumpmachine | cut -f1 -d -)
-ifeq ($(TARGET_DEVICE), aarch64)
-	CFLAGS+= -DPLATFORM_TEGRA
-endif
-
-SRCS+= $(wildcard *.c)
-SRCS+= $(wildcard modules/*.c)
+LIBS:= -lnvinfer_plugin -lnvinfer -lnvparsers -L/usr/local/cuda/lib64 -lcudart -lcublas -lstdc++fs
+LFLAGS:= -shared -Wl,--start-group $(LIBS) -Wl,--end-group
 
 INCS:= $(wildcard *.h)
-INCS+= $(wildcard modules/*.h)
+SRCFILES:= nvdsyolofaceinferparser_cpp.cpp\
+			nvdsyolofaceinferparser_cuda.cu
 
-PKGS:= gstreamer-1.0
+TARGET_LIB:= libnvdsyolofaceinferparser.so
 
-OBJS:= $(addsuffix .o, $(basename $(SRCS)))
+TARGET_OBJS:= $(SRCFILES:.cpp=.o)
+TARGET_OBJS:= $(TARGET_OBJS:.cu=.o)
 
-CFLAGS+= -I$(DS_SDK_ROOT)/sources/apps/apps-common/includes -I$(DS_SDK_ROOT)/sources/includes \
- 	     -I/usr/local/cuda-$(CUDA_VER)/include
+all: $(TARGET_LIB)
 
-CFLAGS+= `pkg-config --cflags $(PKGS)`
-LIBS:= `pkg-config --libs $(PKGS)`
-
-LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart \
-       -lcuda -Wl,-rpath,$(LIB_INSTALL_DIR)
-
-all: $(APP)
-
-%.o: %.c $(INCS) Makefile
+%.o: %.cpp $(INCS) Makefile
 	$(CC) -c -o $@ $(CFLAGS) $<
 
-$(APP): $(OBJS) Makefile
-	$(CC) -o $(APP) $(OBJS) $(LIBS)
+%.o: %.cu $(INCS) Makefile
+	$(NVCC) -c -o $@ --compiler-options '-fPIC' $(CUFLAGS)  $<
+
+$(TARGET_LIB) : $(TARGET_OBJS)
+	$(CC) -o $@  $(TARGET_OBJS) $(LFLAGS)
 
 clean:
-	rm -rf $(OBJS) $(APP)
+	rm -rf $(TARGET_LIB) *.o

@@ -17,7 +17,7 @@ inline float clamp(const float val, const float minVal, const float maxVal) {
 }
 
 // Main Function Definition
-extern "C" bool NvDsYoloFaceInfer(
+extern "C" bool NvDsInferParseYoloFace(
     std::vector<NvDsInferLayerInfo> const& outputLayersInfo,
     NvDsInferNetworkInfo const& networkInfo,
     NvDsInferParseDetectionParams const& detectionParams,
@@ -219,8 +219,8 @@ NvDsInferParseCustomYoloFace(std::vector<NvDsInferLayerInfo> const& outputLayers
 
 
 extern "C" bool
-NvDsYoloFaceInfer(std::vector<NvDsInferLayerInfo> const &outputLayersInfo, NvDsInferNetworkInfo const &networkInfo, NvDsInferParseDetectionParams const &detectionParams, std::vector<NvDsInferInstanceMaskInfo> &objectList){
+NvDsInferParseYoloFace(std::vector<NvDsInferLayerInfo> const &outputLayersInfo, NvDsInferNetworkInfo const &networkInfo, NvDsInferParseDetectionParams const &detectionParams, std::vector<NvDsInferInstanceMaskInfo> &objectList){
     return NvDsInferParseCustomYoloFace(outputLayersInfo, networkInfo, detectionParams, objectList);
 }
 
-CHECK_CUSTOM_INSTANCE_MASK_PARSE_FUNC_PROTOTYPE(NvDsYoloFaceInfer);
+CHECK_CUSTOM_INSTANCE_MASK_PARSE_FUNC_PROTOTYPE(NvDsInferParseYoloFace);

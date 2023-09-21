@@ -8,3 +8,4 @@ wandb.env
 examples
 
 /weights/yolov7-face-tiny.trt
+.vscode
