@@ -14,7 +14,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-static const int NUM_CLASSES_YOLO = 80;
+static const int NUM_CLASSES_YOLO = 1;
 #define OBJECTLISTSIZE 25200
 #define BLOCKSIZE  1024
 thrust::device_vector<NvDsInferParseObjectInfo> objects_v(OBJECTLISTSIZE);
@@ -26,22 +26,22 @@ extern "C" bool NvDsInferParseYoloFace_cuda(
     std::vector<NvDsInferParseObjectInfo>& objectList
 );
 
-
-__global__ void decodeYoloV7Tensor_cuda(NvDsInferParseObjectInfo *binfo/*output*/, float* data, int dimensions, int rows,
-                                        int netW, int netH, float Threshold){
+__global__ void decodeTensorYoloFaceCuda(NvDsInferParseObjectInfo *binfo, float* data, 
+    int dimensions, int rows, int netW, int netH, float Threshold){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < rows) {
         data = data + idx * dimensions;
-        float maxProb = data[ 4];
+        float maxProb = data[4];
         //maxProb < Threshold, directly return
         if(maxProb < Threshold){
             binfo[idx].detectionConfidence = 0.0;
             return;
         }
-        float bx = data[ 0];
-        float by = data[ 1];
-        float bw = data[ 2];
-        float bh = data[ 3];
+        
+        float bx = data[0];
+        float by = data[1];
+        float bw = data[2];
+        float bh = data[3];
         int  maxIndex = 0;
         float * classes_scores = (float *)(data + 5);
         float maxScore = 0;
@@ -93,8 +93,7 @@ static bool NvDsInferParseCustomYoloFace(
     }
     const NvDsInferLayerInfo &layer = outputLayersInfo[0];
 
-    if (NUM_CLASSES_YOLO != detectionParams.numClassesConfigured)
-    {
+    if (NUM_CLASSES_YOLO != detectionParams.numClassesConfigured){
         std::cerr << "WARNING: Num classes mismatch. Configured:"
                   << detectionParams.numClassesConfigured
                   << ", detected by network: " << NUM_CLASSES_YOLO << std::endl;
@@ -105,14 +104,16 @@ static bool NvDsInferParseCustomYoloFace(
     int rows = layer.inferDims.numElements / layer.inferDims.d[1];
     
     int GRIDSIZE = ((OBJECTLISTSIZE-1)/BLOCKSIZE)+1;
+    
     //find the min threshold
     float min_PreclusterThreshold = *(std::min_element(detectionParams.perClassPreclusterThreshold.begin(),
         detectionParams.perClassPreclusterThreshold.end()));
-    decodeYoloV7Tensor_cuda<<<GRIDSIZE,BLOCKSIZE>>>
+
+    decodeTensorYoloFaceCuda<<<GRIDSIZE,BLOCKSIZE>>>
         (thrust::raw_pointer_cast(objects_v.data()), data, dimensions, rows, networkInfo.width, 
         networkInfo.height, min_PreclusterThreshold);
     objectList.resize(OBJECTLISTSIZE);
-    thrust::copy(objects_v.begin(),objects_v.end(),objectList.begin());//the same as cudamemcpy
+    thrust::copy(objects_v.begin(),objects_v.end(),objectList.begin()); // cudamemcpy()
 
     return true;
 }
@@ -121,12 +122,9 @@ extern "C" bool NvDsInferParseYoloFace_cuda(
     std::vector<NvDsInferLayerInfo> const& outputLayersInfo,
     NvDsInferNetworkInfo const& networkInfo,
     NvDsInferParseDetectionParams const& detectionParams,
-    std::vector<NvDsInferParseObjectInfo>& objectList)
-{
+    std::vector<NvDsInferParseObjectInfo>& objectList) {
     nvtxRangePush("NvDsInferParseYoloV7");
-    bool ret = NvDsInferParseCustomYoloFace (
-        outputLayersInfo, networkInfo, detectionParams, objectList);
-
+    bool ret = NvDsInferParseCustomYoloFace(outputLayersInfo, networkInfo, detectionParams, objectList);
     nvtxRangePop();
     return ret;
 }

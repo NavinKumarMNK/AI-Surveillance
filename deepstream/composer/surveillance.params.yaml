@@ -1,5 +1,0 @@
-components:
-- name: Multi Source Input0
-  parameters:
-    uri-list: rtsp://192.168.1.10:8555/mystream
-name: Multi Source Input

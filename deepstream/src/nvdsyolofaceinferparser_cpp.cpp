@@ -8,7 +8,7 @@
 #include "nvdsinfer_custom_impl.h"
 
 #define NMS_THRESHOLD 0.45;
-
+static const int NUM_CLASSES_YOLO = 1;
 
 // clamp values
 inline float clamp(const float val, const float minVal, const float maxVal) {

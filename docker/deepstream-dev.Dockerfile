@@ -42,7 +42,7 @@ WORKDIR /workspace
 COPY deepstream /workspace/SurveillanceAI/deepstream
 
 WORKDIR /workspace/SurveillanceAI/deepstream
-RUN make -C src && make
+RUN make -C src
 
 
 

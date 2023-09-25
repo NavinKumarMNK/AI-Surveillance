@@ -53,3 +53,6 @@ Refer https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Overview.h
 ```
 Refer Devices ~ https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Performance.html
 ```
+```
+Refer License ~ https://developer.download.nvidia.com/assets/Deepstream/LicenseAgreement-NGC_6.1.pdf
+```
