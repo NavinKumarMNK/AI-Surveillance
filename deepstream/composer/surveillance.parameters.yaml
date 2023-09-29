@@ -1,91 +1,20 @@
 components:
-- name: single_source_input
+- name: face_detector
   parameters:
-    cudadec-memtype: '0'
-    dec-skip-frames: '0'
-    drop-frame-interval: '0'
-    file-loop: 'False'
-    gpu-id: '0'
-    latency: '100'
-    num-extra-surfaces: '1'
-    rtsp-reconnect-interval: '0'
-    select-rtp-protocol: '0'
-    smart-rec-cache: '0'
-    smart-rec-container: '0'
-    smart-rec-default-duration: '20'
-    smart-rec-dir-path: ''
-    smart-rec-file-prefix: Smart_Record
-    smart-rec-mode: '0'
-    smart-rec-video-cache: '0'
-    smart-record: '0'
-    source-id: '-1'
-    type: '0'
-    udp-buffer-size: '524288'
-    uri: rtsp://192.168.1.10:8555/mystream
-name: single_source_input
----
-components:
-- name: streammux
-  parameters:
-    async-process: 'True'
-    attach-sys-ts: 'True'
-    batch-size: 1
-    batched-push-timeout: '40000'
-    buffer-pool-size: '4'
-    compute-hw: '0'
-    enable-padding: 'False'
-    frame-duration: '-140462611'
-    frame-num-reset-on-eos: 'False'
-    frame-num-reset-on-stream-reset: 'False'
-    gpu-id: '0'
-    height: 1080
-    interpolation-method: '1'
-    live-source: 'False'
-    max-latency: '0'
-    num-surfaces-per-frame: '1'
-    nvbuf-memory-type: '0'
-    sync-inputs: 'False'
-    width: 1920
-name: streammux
----
-components:
-- name: onscreen_display
-  parameters:
-    bbox-bg-colors: ''
-    bbox-border-colors: ''
-    border-width: '0'
-    clock-color: '0'
-    clock-font: ''
-    clock-font-size: '0'
-    display-bbox: 'True'
-    display-clock: 'False'
-    display-mask: 'False'
-    display-text: 'True'
-    display-tracking-id: 'True'
-    font: Serif
-    gpu-id: '0'
-    nvbuf-memory-type: '0'
-    process-mode: '0'
-    reformat-object-labels: 'False'
-    text-bg-color: '0'
-    text-color: '0'
-    text-size: '0'
-    x-clock-offset: '0'
-    y-clock-offset: '0'
-name: onscreen_display
+    config-file-path: /workspace/SurveillanceAI/deepstream/config/facedetector/yoloface_infer.yaml
+name: face_detector
 ---
 components:
 - name: nv_ds_rtsp_out2
   parameters:
-    bitrate: '0'
-    codec: '1'
-    enc-type: '0'
-    gpu-id: '0'
-    iframeinterval: '30'
-    nvbuf-memory-type: '0'
+    iframeinterval: 30
     output-file: rtsp://127.0.0.1:8554/outstream
-    profile: '0'
-    qos: 'False'
-    rtsp-port: '8554'
-    sync: 'True'
+    rtsp-port: 8554
 name: NvDsRtspOut
+---
+components:
+- name: Multi Source Input6
+  parameters:
+    uri-list: rtsp://192.168.250.183:8555/mystream
+name: Multi Source Input
+s

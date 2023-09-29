@@ -7,10 +7,12 @@ import queue
 
 PORT = 8555
 TYPE = 265  # 264
+PUBLISH_IP = "192.168.250.183"
 
 fps = 6
 width = 1920
 height = 1080
+
 
 # queue to pass frames from the main thread to the printing thread
 '''
@@ -35,10 +37,10 @@ try:
     # GStreamer pipeline for RTSP streaming
     if TYPE == 265:
         pipeline = ('appsrc ! videoconvert ! video/x-raw,format=I420 ! x265enc speed-preset=ultrafast bitrate=600 key-int-max='
-                    + str(fps * 2) + ' ! video/x-h265 ! rtspclientsink location=rtsp://192.168.1.10:'+ str(PORT) + '/mystream')
+                    + str(fps * 2) + ' ! video/x-h265 ! rtspclientsink location=rtsp://'+PUBLISH_IP+':'+ str(PORT) + '/mystream')
     elif TYPE == 264:
         pipeline = ('appsrc ! videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast bitrate=600 key-int-max='
-                + str(fps * 2) + ' ! video/x-h264,profile=baseline ! rtspclientsink location=rtsp://192.168.1.10:'+ str(PORT) + '/mystream')
+                + str(fps * 2) + ' ! video/x-h264,profile=baseline ! rtspclientsink location=rtsp://'+PUBLISH_IP+':'+ str(PORT) + '/mystream')
 
     cap = cv2.VideoCapture(0)  
     

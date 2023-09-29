@@ -62,8 +62,7 @@ python3 export.py --weights ./weights/yolov7-tiny.pt --img-size 640 --batch-size
 ### TensorRT
  
 ```bash
-/usr/src/tensorrt/bin/trtexec --onnx=./weights/yolov7-face-tiny.onnx --sa
-veEngine=./weights/yolov7-face-tiny.trt --workspace=8192 --fp16 --minShapes=images:1x3x640x640 --optShapes=images:1x3x640x640 --maxShapes=images:4x3x640x640 --shapes=images:1x3x640x640
+/usr/src/tensorrt/bin/trtexec --onnx=./weights/yolov7-face-tiny.onnx --saveEngine=./weights/yolov7-face-tiny.trt --workspace=8192 --fp16 --minShapes=images:1x3x640x640 --optShapes=images:1x3x640x640 --maxShapes=images:4x3x640x640 --shapes=images:1x3x640x640
 ```
 
 ## Acknowledgments

@@ -13,8 +13,7 @@
 ## Future work
 
 - [ ] Deepstream Support
-- [ ] Triton Server Support
-- [ ] OpenVINO Model Server Support
+
 
 ### Build the container
 
