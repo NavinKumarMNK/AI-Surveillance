@@ -1,0 +1,25 @@
+property:
+  gpu-id: 0
+  net-scale-factor: 0.0039215697906911373
+  model-color-format: 0
+  # onnx-file: /workspace/SurveillanceAI/deepstream/models/yolov7-face-tiny.onnx
+  model-engine-file: /workspace/SurveillanceAI/deepstream/models/yolov7-face-tiny.onnx_b4_gpu0_fp16.engine
+  labelfile-path:  /workspace/SurveillanceAI/deepstream/config/facedetector/labels.txt
+  network-mode: 2
+  num-detected-classes: 1
+  gie-unique-id: 1
+  network-type: 0
+  is-classifier: 0
+  cluster-mode: 2
+  maintain-aspect-ratio: 1
+  symmetric-padding: 1
+  scaling-filter: 1
+  parse-bbox-func-name: NvDsInferParseCustomYoloV7_cuda
+  disable-output-host-copy: 1
+  custom-lib-path: /workspace/SurveillanceAI/deepstream/libs/libnvdsinfer_custom_impl_Yolo.so
+  crop-objects-to-roi-boundary: 1
+
+class-attrs-all:
+  nms-iou-threshold: 0.65
+  pre-cluster-threshold: 0.25
+  topk: 300
