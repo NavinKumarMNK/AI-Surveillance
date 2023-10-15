@@ -13,6 +13,7 @@ import dotenv
 from utils import find_most_recent_subfolder
 from tqdm import tqdm as tqdm
 from model import FaceModel
+from lightning.pytorch.tuner import Tuner
 from dataset import (get_train_transforms, make_dataframe, get_val_transforms, FaceDataLoader)
 
 
@@ -35,7 +36,8 @@ def run():
                       loss_config=config['loss']['arcface'],
                       num_classes=config['general']['num_classes'],
                       emb_dim=config['general']['emb_dim'],
-                      **config['model'][model])
+                      **config['model'][model]
+            )
     
     # wandb
     wandb_logger = None
@@ -61,7 +63,17 @@ def run():
     trainer = L.Trainer(
         **config['train']['args'], 
         callbacks=callbacks, 
-        logger=wandb_logger)
+        logger=wandb_logger,
+    )
+    
+    '''
+    tuner = Tuner(trainer)
+    lr_finder = tuner.lr_find(model, dataset)
+    
+    new_lr = lr_finder.suggestion()
+    model.learning_rate = new_lr
+    print(model.learning_rate)
+    '''
     try:
         trainer.fit(model, dataset)
     except KeyboardInterrupt:
@@ -69,8 +81,9 @@ def run():
     
     return model, dataset
 
-def test():
     
+
+def test():
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
     
@@ -105,7 +118,6 @@ def test():
             image = image.to('cuda')
             label = label.to('cuda')
             output = model(image)
-            output = F.normalize(output)
             output = model.arcface(output, label)
             _, predicted = torch.max(output.data, 1)
             total += label.size(0)

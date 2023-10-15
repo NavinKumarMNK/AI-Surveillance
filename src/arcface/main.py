@@ -85,6 +85,7 @@ class Train():
         # run & test
         run()
         self.model, self.dataset = test()
+        
         path = self.model.save_model()
         self.payload_map = pd.read_csv(self.payload_map)
         
@@ -102,6 +103,7 @@ class Train():
             wandb_push_model(
                 model_path=path,
             )
+        
         
 class Inference():    
     def __init__(self, ckpt_path, device): 
@@ -141,12 +143,12 @@ async def inference():
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
 
-    img_path = '/workspace/SurveillanceAI/src/arcface/temp/aa.jpg'
+    img_path = '/workspace/SurveillanceAI/src/arcface/data/faces/shah_rukh_khan/0bbdb98f05.jpg'
     infer = Inference(**config['inference_pipeline'])
     pred = await infer.inference(img_path)
     print(pred)
     
 if __name__ == '__main__':
-    train()
+    #train()
     asyncio.run(inference())
     

@@ -7,7 +7,7 @@ import openvino.runtime as ov
 import os 
 
 from models.EfficientNetv2 import EfficientNetv2
-from models.ResNet import ResNet
+from models.IResNet import IResNet
 from loss import ArcFaceLoss
 from typing import Union
 from openvino.tools.mo import convert_model
@@ -15,7 +15,7 @@ from typing import List
 
 __model__ = {
     'efficientnet' : EfficientNetv2,
-    'resnet' : ResNet
+    'iresnet' : IResNet,
 }
 
 class FaceModel(L.LightningModule):
@@ -24,13 +24,13 @@ class FaceModel(L.LightningModule):
                  lr: float=1e-3,
                  emb_dim: int=512):
         super(FaceModel, self).__init__()
-        self.backbone: Union[EfficientNetv2, ResNet] = __model__[model](
+        self.backbone: Union[EfficientNetv2, IResNet] = __model__[model](
             file_path=backbone_path if pretrained else None,
             input_size=input_size,
         )
         self.input_size = input_size
         self.backbone_path = backbone_path
-        self.lr = lr
+        self.learning_rate = lr
         self.arcface = ArcFaceLoss(**loss_config,
                                    num_classes=num_classes,
                                    emb_dim=emb_dim)
@@ -58,10 +58,9 @@ class FaceModel(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        # Adam with Scheduler
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        #scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
-        return {'optimizer': optimizer, }
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
     
     def save_model(self) -> str:
         self.backbone.save_model(self.backbone_path)
@@ -69,7 +68,7 @@ class FaceModel(L.LightningModule):
 
     def load_model(self):
         self.backbone = torch.load(self.backbone_path+'.pt')
-        
+
 
     def finalize(self, batch_size) -> str:
         self.backbone.to_onnx(

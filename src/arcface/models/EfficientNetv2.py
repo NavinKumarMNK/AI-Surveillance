@@ -24,11 +24,8 @@ class EfficientNetv2(L.LightningModule):
             self.model = models.efficientnet_v2_s(weights=None)
             # linear => batchnorm => relu => dropout           
             self.model.classifier = nn.Sequential(
-                nn.Linear(1280, 2048),
-                nn.BatchNorm1d(2048),
-                nn.ReLU(),
-                nn.Dropout(0.25),
-                nn.Linear(2048, 512),
+                nn.Linear(1280, 512, bias=False),
+                nn.BatchNorm1d(512)
             )
         
     def forward(self, x):

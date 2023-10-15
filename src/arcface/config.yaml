@@ -6,20 +6,20 @@ general:
 
 wandb:
   project: arcface
-  name: efficientnet
-  tags: ['efficientnet', 'arcface']
+  name: iresnet
+  tags: ['iresnet', 'arcface']
   credentials: "wandb.env" # intialize credentials in this file
   save_dir: /workspace/SurveillanceAI/src/arcface/logs
   registry:
   - name: "face"
 
 model:
-  type: efficientnet
-  efficientnet:
+  type: iresnet
+  iresnet:
     input_size: 112
-    backbone_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet
+    backbone_path: /workspace/SurveillanceAI/src/arcface/weights/iresnet
     pretrained: false
-    lr : 0.0003
+    lr : 0.0005
   
 
 loss:
@@ -42,7 +42,7 @@ data:
 train:
   callbacks:
     early_stopping:
-      patience: 1
+      patience: 3
       monitor: val_loss
       mode: min
     model_checkpoint:
@@ -73,14 +73,14 @@ train_pipeline:
   post_training: true
   push_registry: false
   device: cuda
-  model_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet.pt
+  model_path: /workspace/SurveillanceAI/src/arcface/weights/iresnet.pt
   payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv
   compile_bs: 32 # batch size for compilation
   upload_size: 1000 # number of vectors to upload at once
 
 
 inference_pipeline:
-  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet.pt
+  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/iresnet.pt
   device: cuda
 
 vector-db:
