@@ -34,7 +34,7 @@ class EfficientNetv2(L.LightningModule):
     def save_model(self, file_path=None):
         print("Saving Model")
         self.file_path = file_path or self.file_path
-        torch.save(self.model, self.file_path+'.pt')
+        torch.save(self.model, self.file_path)
   
 if __name__ == '__main__':
     model = EfficientNetv2()
