@@ -15,7 +15,7 @@ def l2_norm(input, axis=1):
 
 class SEModule(nn.Module):
     def __init__(self, channels, reduction):
-        super(SEModule, self).__init()
+        super(SEModule, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc1 = nn.Conv2d(
             channels, channels // reduction, kernel_size=1, padding=0, bias=False)
@@ -35,7 +35,7 @@ class SEModule(nn.Module):
 
 class bottleneck_IR_SE(nn.Module):
     def __init__(self, in_channel, depth, stride):
-        super(bottleneck_IR_SE, self).__init()
+        super(bottleneck_IR_SE, self).__init__()
         if in_channel == depth:
             self.shortcut_layer = nn.MaxPool2d(1, stride)
         else:
@@ -102,9 +102,8 @@ def get_blocks(num_layers):
 
 class IRSeNetModel(nn.Module):
     def __init__(self, drop_ratio, num_layers=50):
-        super(IRSeNetModel, self).__init()
+        super(IRSeNetModel, self).__init__()
         assert num_layers in [50, 100, 152], 'num_layers should be 50, 100, or 152'
-        assert mode in ['ir', 'ir_se'], 'mode should be ir or ir_se'
         blocks = get_blocks(num_layers)
         unit_module = bottleneck_IR_SE
         self.input_layer = nn.Sequential(nn.Conv2d(3, 64, (3, 3), 1, 1, bias=False),

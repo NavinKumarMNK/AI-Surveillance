@@ -78,15 +78,14 @@ class Train():
         return res
          
     
-    async def train(self):
+    async def _run(self, train: bool):
         # Training : Check the config.yaml file and run the training
-        from train import run, test
+        from train import run
         
         # run & test
-        run()
-        self.model, self.dataset = test()
+        self.model = run(train=train)
         
-        path = self.model.save_model()
+        '''
         self.payload_map = pd.read_csv(self.payload_map)
         
         # optimization - Optional
@@ -103,7 +102,7 @@ class Train():
             wandb_push_model(
                 model_path=path,
             )
-        
+        '''
         
 class Inference():    
     def __init__(self, ckpt_path, device): 
@@ -132,12 +131,12 @@ class Inference():
             res = await self.db.search(features)
             return res
 
-def train():    
+def run(train: bool):    
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
         
     train_obj = Train(**config['train_pipeline'])
-    asyncio.run(train_obj.train())
+    asyncio.run(train_obj._run(train))
 
 async def inference():
     with open('config.yaml') as f:
@@ -149,6 +148,6 @@ async def inference():
     print(pred)
     
 if __name__ == '__main__':
-    #train()
+    run(train=True)
     asyncio.run(inference())
     

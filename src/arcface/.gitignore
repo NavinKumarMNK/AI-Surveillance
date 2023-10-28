@@ -5,6 +5,7 @@ __pycache__
 
 logs/arcface
 weights/*.pt
+weights/*.pth
 weights/*.onnx
 weights/*.trt
 weights/efficientnet
@@ -14,3 +15,4 @@ weights/*.bin
 wandb
 
 *.env
+

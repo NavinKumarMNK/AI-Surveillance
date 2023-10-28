@@ -10,10 +10,6 @@
   <img src="assets/DeepStream_Overview.png" alt="DeepStream Overview">
 </p>
 
-## Future work
-
-- [ ] Deepstream Support
-
 
 ### Build the container
 

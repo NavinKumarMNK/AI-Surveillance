@@ -7,6 +7,8 @@ import openvino.runtime as ov
 import os 
 
 from models.EfficientNetv2 import EfficientNetv2
+from models.IRSeNet import IRSeNet
+from models.MobileNet import MobileNet
 from models.IResNet import IResNet
 from loss import ArcFaceLoss
 from typing import Union
@@ -15,8 +17,23 @@ from typing import List
 
 __model__ = {
     'efficientnet' : EfficientNetv2,
-    'iresnet' : IResNet,
+    'irsenet' : IRSeNet,
+    'mobilenet': MobileNet,
+    'iresnet': IResNet,
 }
+
+class FocalLoss(torch.nn.Module):
+    def __init__(self, gamma=0, eps=1e-7):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.eps = eps
+        self.ce = torch.nn.CrossEntropyLoss()
+
+    def forward(self, input, target):
+        logp = self.ce(input, target)
+        p = torch.exp(-logp)
+        loss = (1 - p) ** self.gamma * logp
+        return loss.mean()
 
 class FaceModel(L.LightningModule):
     def __init__(self, model: str, backbone_path: str, input_size: int,
@@ -24,7 +41,7 @@ class FaceModel(L.LightningModule):
                  lr: float=1e-3,
                  emb_dim: int=512):
         super(FaceModel, self).__init__()
-        self.backbone: Union[EfficientNetv2, IResNet] = __model__[model](
+        self.backbone: Union[EfficientNetv2, IRSeNet, MobileNet] = __model__[model](
             file_path=backbone_path if pretrained else None,
             input_size=input_size,
         )
@@ -34,7 +51,7 @@ class FaceModel(L.LightningModule):
         self.arcface = ArcFaceLoss(**loss_config,
                                    num_classes=num_classes,
                                    emb_dim=emb_dim)
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.loss = FocalLoss()
         self.save_hyperparameters()    
 
     def forward(self, x):
@@ -63,7 +80,7 @@ class FaceModel(L.LightningModule):
         return {'optimizer': optimizer, 'lr_scheduler': scheduler}
     
     def save_model(self) -> str:
-        self.backbone.save_model(self.backbone_path)
+        self.backbone.save_model(self.backbone_path+'.pt')
         return self.backbone_path
 
     def load_model(self):

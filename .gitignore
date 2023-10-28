@@ -6,5 +6,5 @@ temp
 vectordb.env
 wandb.env
 examples
-
+test
 .vscode

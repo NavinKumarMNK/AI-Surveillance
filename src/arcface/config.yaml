@@ -6,29 +6,29 @@ general:
 
 wandb:
   project: arcface
-  name: iresnet
-  tags: ['iresnet', 'arcface']
+  name: irsenet
+  tags: ['irsenet', 'arcface']
   credentials: "wandb.env" # intialize credentials in this file
   save_dir: /workspace/SurveillanceAI/src/arcface/logs
   registry:
   - name: "face"
 
 model:
-  type: iresnet
-  iresnet:
+  type: irsenet
+  irsenet:
     input_size: 112
-    backbone_path: /workspace/SurveillanceAI/src/arcface/weights/iresnet
+    backbone_path: /workspace/SurveillanceAI/src/arcface/weights/irsenet
     pretrained: false
-    lr : 0.0005
+    lr : 0.0001
   
 
 loss:
   type: arcface
   arcface:
     s: 64.0  # scale
-    m: 0.5   # margin
-    easy_margin: false
-    sample_rate: 0.1
+    m1: 1   # margin
+    m2: 0.5
+    m3: 0.35
 
 data:
   path: /workspace/SurveillanceAI/src/arcface/data/faces
@@ -42,7 +42,7 @@ data:
 train:
   callbacks:
     early_stopping:
-      patience: 3
+      patience: 1
       monitor: val_loss
       mode: min
     model_checkpoint:
@@ -73,14 +73,14 @@ train_pipeline:
   post_training: true
   push_registry: false
   device: cuda
-  model_path: /workspace/SurveillanceAI/src/arcface/weights/iresnet.pt
+  model_path: /workspace/SurveillanceAI/src/arcface/weights/irsenet
   payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv
   compile_bs: 32 # batch size for compilation
   upload_size: 1000 # number of vectors to upload at once
 
 
 inference_pipeline:
-  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/iresnet.pt
+  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/irsenet.pt
   device: cuda
 
 vector-db:
