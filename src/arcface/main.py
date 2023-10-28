@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import torch
 import yaml
 import asyncio
+import numpy as np
+import os
 import pandas as pd
 
 from db import VectorDB
@@ -13,61 +15,68 @@ from PIL import Image
 from dataset import get_val_transforms
 from tqdm import tqdm
 
+
 class Train():
-    def __init__(self, optimization, post_training, 
-                 push_registry, model_path, payload_map,
-                 compile_bs, device, upload_size):
+    def __init__(self, optimization, post_training, push_registry, 
+                 model_path, compile_bs, device, method, data_path):
         self.optimization = optimization
         self.post_training = post_training
         self.device = device
         self.push_registry = push_registry
         self.model_path = model_path
-        self.payload_map = payload_map
         self.compile_bs = compile_bs
-        self.upload_size= upload_size
+        self.method = method
+        self.data_path = data_path
         self.db = VectorDB()
     
-    def _upload_dict(self):
-        self.dataset.batch_size = 1
-        self.dataset.setup()
-        self.model.eval()
+    @torch.no_grad() 
+    def do_inference(self, imgs):
+        for i in range(len(imgs)):
+            imgs[i] = Image.open(imgs[i])
+            imgs[i] = self.transform(imgs[i])    
         
-        self.model = self.model.to(self.device)
-        ret_lst = []
-        
-        with torch.no_grad():    
-            for image, label in tqdm(self.dataset.val_dataloader()):
-                image = image.to(self.device)
-                label = label.to(self.device)
-                output = self.model.backbone(image)
-                output = F.normalize(output)
-                output = output.cpu().numpy().tolist()[0]
-                label = label.cpu().numpy().tolist()[0]
-                payload = self.payload_map.loc[
-                    self.payload_map['label_id'] == label, 'label'].values[0]
-                ret_lst.append({
-                    'payload': {'label' : payload},
-                    'vector': output
-                })
-                
-                if len(ret_lst) % self.upload_size == 0:
-                    yield ret_lst
-                    ret_lst = []   
-
-        if len(ret_lst) % self.upload_size != 0:
-            yield ret_lst
+        imgs = torch.stack(imgs).to(self.device)
+        output = self.model(imgs)
+        # outputs {num_emb, emb_dim} normalize for every vector
+        output = F.normalize(output, dim=-1)
+        output = output.cpu().numpy().tolist()
+        return output
+    
+    def _upload_dict(self):   
+        for folder_label in tqdm(os.listdir(self.data_path)):
+            imgs = []
+            for faces in os.listdir(os.path.join(self.data_path, folder_label)):
+                imgs.append(os.path.join(self.data_path, folder_label, faces))             
             
+            embeddings = self.do_inference(imgs)
+            
+            if self.method == 'all':
+                res = [{
+                    'payload': {'label' : folder_label},
+                    'vector': vector
+                } for vector in embeddings]
+                
+                    
+            if self.method == 'avg':
+                embeddings = np.array(embeddings)
+                embeddings = np.mean(embeddings, axis=0)
+                
+                
+                res = [{
+                    'payload': {'label' : folder_label},
+                    'vector': embeddings.tolist()
+                }]
+                            
+            yield res
             
     async def update_db(self):
         res = await self.db.verify_collection()
         if res:
+            print('Collection Deleted')
             await self.db.delete_collection()
-            await self.db.create_collections()
-            await self.db.verify_collection()
-        else:
-            await self.db.create_collections()
-            await self.db.verify_collection()
-        
+        await self.db.create_collections()
+        await self.db.verify_collection()
+    
         # upload vectors - batch addition
         for data in self._upload_dict():
             res = await self.db.insert_vectors(
@@ -78,20 +87,21 @@ class Train():
         return res
          
     
-    async def _run(self, train: bool):
+    async def run_pipeline(self, train: bool):
         # Training : Check the config.yaml file and run the training
         from train import run
         
         # run & test
         self.model = run(train=train)
-        
-        '''
-        self.payload_map = pd.read_csv(self.payload_map)
+        self.model.eval()
+        self.transform = get_val_transforms(
+            config={'input_size':112}
+        )
         
         # optimization - Optional
         if self.optimization:
             path= self.model.finalize(batch_size=self.compile_bs)
-        
+
         # post training - vectors to db    
         if self.post_training:
             response = await self.update_db()
@@ -102,7 +112,7 @@ class Train():
             wandb_push_model(
                 model_path=path,
             )
-        '''
+
         
 class Inference():    
     def __init__(self, ckpt_path, device): 
@@ -121,7 +131,6 @@ class Inference():
         img = Image.open(img_path)
         img = img.convert('RGB')
         img = transform(img)
-        print(img)
         img = img.unsqueeze(0).to(self.device)
         
         with torch.no_grad():
@@ -136,18 +145,18 @@ def run(train: bool):
         config = yaml.safe_load(f)
         
     train_obj = Train(**config['train_pipeline'])
-    asyncio.run(train_obj._run(train))
+    asyncio.run(train_obj.run_pipeline(train))
 
 async def inference():
     with open('config.yaml') as f:
         config = yaml.safe_load(f)
 
-    img_path = '/workspace/SurveillanceAI/src/arcface/data/faces/shah_rukh_khan/0bbdb98f05.jpg'
+    img_path = '/workspace/SurveillanceAI/src/arcface/temp/OIP.jpeg'
     infer = Inference(**config['inference_pipeline'])
     pred = await infer.inference(img_path)
     print(pred)
     
 if __name__ == '__main__':
-    run(train=True)
+    run(train=False)
     asyncio.run(inference())
     

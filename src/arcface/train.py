@@ -18,28 +18,28 @@ from dataset import (get_train_transforms, make_dataframe, get_val_transforms, F
 
 
 def run(train: bool):
+    with open('config.yaml') as f:
+        config = yaml.safe_load(f)
+    
+    torch.manual_seed(config['general']['seed'])
+    np.random.seed(config['general']['seed'])
+    
+    data_path = config['data']['path']
+    data = make_dataframe(data_path, train_val_split=config['data']['train_val_split'])
+    
+    
+    dataset = FaceDataLoader(data=data, **config['data']['dataloader'])
+    dataset.setup()
+    
+    model_name=config['model']['type']
+    model = FaceModel(model=model_name, 
+                    loss_config=config['loss']['arcface'],
+                    num_classes=config['general']['num_classes'],
+                    emb_dim=config['general']['emb_dim'],
+                    **config['model'][model_name]
+            )
+    
     if train:
-        with open('config.yaml') as f:
-            config = yaml.safe_load(f)
-        
-        torch.manual_seed(config['general']['seed'])
-        np.random.seed(config['general']['seed'])
-        
-        data_path = config['data']['path']
-        data = make_dataframe(data_path, train_val_split=config['data']['train_val_split'])
-        
-        
-        dataset = FaceDataLoader(data=data, **config['data']['dataloader'])
-        dataset.setup()
-        
-        model_name=config['model']['type']
-        model = FaceModel(model=model_name, 
-                        loss_config=config['loss']['arcface'],
-                        num_classes=config['general']['num_classes'],
-                        emb_dim=config['general']['emb_dim'],
-                        **config['model'][model_name]
-                )
-        
         # wandb
         wandb_logger = None
         if config['general']['wandb'] == True:
@@ -97,10 +97,7 @@ def run(train: bool):
         print(f"Loading checkpoint from {ckpt_path}")
         
         model = FaceModel.load_from_checkpoint(checkpoint_path=ckpt_path)
-        
-    else:
-        model = FaceModel.load_model()
-                
+                    
     model.eval()
     model = model.to('cuda')
     

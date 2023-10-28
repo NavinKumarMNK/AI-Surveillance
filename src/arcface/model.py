@@ -22,19 +22,6 @@ __model__ = {
     'iresnet': IResNet,
 }
 
-class FocalLoss(torch.nn.Module):
-    def __init__(self, gamma=0, eps=1e-7):
-        super(FocalLoss, self).__init__()
-        self.gamma = gamma
-        self.eps = eps
-        self.ce = torch.nn.CrossEntropyLoss()
-
-    def forward(self, input, target):
-        logp = self.ce(input, target)
-        p = torch.exp(-logp)
-        loss = (1 - p) ** self.gamma * logp
-        return loss.mean()
-
 class FaceModel(L.LightningModule):
     def __init__(self, model: str, backbone_path: str, input_size: int,
                  num_classes: int, loss_config, pretrained: bool, 
@@ -51,7 +38,7 @@ class FaceModel(L.LightningModule):
         self.arcface = ArcFaceLoss(**loss_config,
                                    num_classes=num_classes,
                                    emb_dim=emb_dim)
-        self.loss = FocalLoss()
+        self.loss = torch.nn.CrossEntropyLoss()
         self.save_hyperparameters()    
 
     def forward(self, x):
@@ -75,7 +62,8 @@ class FaceModel(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=5e-4)
+        #optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
         return {'optimizer': optimizer, 'lr_scheduler': scheduler}
     

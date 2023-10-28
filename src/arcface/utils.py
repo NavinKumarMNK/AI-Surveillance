@@ -44,3 +44,9 @@ def wandb_push_model(model_path):
     wandb.run.link_artifact(artifact, 
         f"{config['wandb']['registry'][0]['name']}/{config['wandb']['name']}"
     )
+    
+def l2_norm(input,axis=1):
+    import torch
+    norm = torch.norm(input,2,axis,True)
+    output = torch.div(input, norm)
+    return output

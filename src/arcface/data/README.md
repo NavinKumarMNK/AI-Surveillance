@@ -2,7 +2,7 @@
 
 ## Faces
 
-> Folders contains the faces and name of the folder is the uid of the person. This should contain only faces (not passport size images) taken in different angles. min(10 images) of each label
+> Folders contains the faces and name of the folder is the uid of the person. This should contain only faces (not passport size images) taken in different angles. avg(10 images) of each label
 
 ```
 data

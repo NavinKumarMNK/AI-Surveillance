@@ -27,16 +27,14 @@ def get_train_transforms(config):
         transforms.RandomPerspective(distortion_scale=0.2, p=0.5),
         #transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5)),
         transforms.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                std=[0.229, 0.224, 0.225]),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ])
     
 def get_val_transforms(config):
     return transforms.Compose([
         transforms.Resize((config['input_size'], config['input_size']), antialias=True),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                std=[0.229, 0.224, 0.225]),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ])
 
 def make_dataframe(data_path: str, train_val_split: float=0.8):

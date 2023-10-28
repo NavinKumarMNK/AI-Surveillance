@@ -4,56 +4,45 @@ import torch
 import torch.nn.functional as F
 import yaml
 import math
+from utils import l2_norm
+
 
 class ArcFaceLoss(torch.nn.Module):
-    def __init__(self, s, m1, m2, m3,
-                 interclass_filtering_threshold=0):
-        super().__init__()
-        self.s = s
-        self.m1 = m1
-        self.m2 = m2
-        self.m3 = m3
-        self.interclass_filtering_threshold = interclass_filtering_threshold
+    def __init__(self, emb_dim=512, num_classes=None,  s=64., m=0.5):
+        super(ArcFaceLoss, self).__init__()
+        self.num_classes = num_classes
+        self.kernel = torch.nn.Parameter(torch.Tensor(emb_dim,num_classes))
+    
+        # initial kernel
+        self.kernel.data.uniform_(-1, 1).renorm_(2,1,1e-5).mul_(1e5)
+        self.m = m 
+        self.s = s 
+        self.cos_m = math.cos(m)
+        self.sin_m = math.sin(m)
+        self.mm = self.sin_m * m 
+        self.threshold = math.cos(math.pi - m)
         
-        self.cos_m = math.cos(self.m2)
-        self.sin_m = math.sin(self.m2)
-        self.theta = math.cos(math.pi - self.m2)
-        self.sinmm = math.sin(math.pi - self.m2) * self.m2
-        self.easy_margin = False
+    def forward(self, embbedings, label):
+        nB = len(embbedings)
+        kernel_norm = l2_norm(self.kernel,axis=0)
+        cos_theta = torch.mm(embbedings,kernel_norm)
+        cos_theta = cos_theta.clamp(-1,1) # for numerical stability
+        cos_theta_2 = torch.pow(cos_theta, 2)
+        sin_theta_2 = 1 - cos_theta_2
+        sin_theta = torch.sqrt(sin_theta_2)
+        cos_theta_m = (cos_theta * self.cos_m - sin_theta * self.sin_m)
+        
+        cond_v = cos_theta - self.threshold
+        cond_mask = cond_v <= 0
+        keep_val = (cos_theta - self.mm)
+        # print(cos_theta_m.dtype, keep_val.dtype)
+        cos_theta_m[cond_mask] = keep_val[cond_mask]
+        output = cos_theta * 1.0
+        idx_ = torch.arange(0, nB, dtype=torch.long)
+        output[idx_, label] = cos_theta_m[idx_, label]
+        output *= self.s 
+        return output
 
-
-    def forward(self, logits, labels):
-        index_positive = torch.where(labels != -1)[0]
-
-        if self.interclass_filtering_threshold > 0:
-            with torch.no_grad():
-                dirty = logits > self.interclass_filtering_threshold
-                dirty = dirty.float()
-                mask = torch.ones([index_positive.size(0), logits.size(1)], device=logits.device)
-                mask.scatter_(1, labels[index_positive], 0)
-                dirty[index_positive] *= mask
-                tensor_mul = 1 - dirty    
-            logits = tensor_mul * logits
-
-        target_logit = logits[index_positive, labels[index_positive].view(-1)]
-
-        if self.m1 == 1.0 and self.m3 == 0.0:
-            with torch.no_grad():
-                target_logit.arccos_()
-                logits.arccos_()
-                final_target_logit = target_logit + self.m2
-                logits[index_positive, labels[index_positive].view(-1)] = final_target_logit
-                logits.cos_()
-            logits = logits * self.s        
-
-        elif self.m3 > 0:
-            final_target_logit = target_logit - self.m3
-            logits[index_positive, labels[index_positive].view(-1)] = final_target_logit
-            logits = logits * self.s
-        else:
-            raise
-
-        return logits
 
 if __name__ == '__main__':
     torch.manual_seed(0)
