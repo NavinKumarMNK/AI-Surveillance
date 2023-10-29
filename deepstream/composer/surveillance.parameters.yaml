@@ -15,6 +15,24 @@ name: NvDsRtspOut
 components:
 - name: Multi Source Input6
   parameters:
-    uri-list: rtsp://192.168.250.183:8555/mystream
+    uri-list: rtsp://192.168.1.4:8555/mystream
 name: Multi Source Input
-s
+---
+components:
+- name: Cloud Message Converter and Broker147
+  parameters:
+    debug-payload-dir: ''
+    disable-msgconv: 'True'
+    msg-broker-comp-id: '0'
+    msg-broker-config: ''
+    msg-broker-conn-str: '192.168.1.4;9002;mqtt'
+    msg-broker-proto-lib: /opt/nvidia/deepstream/deepstream/lib/libnvds_mqtt_proto.so
+    msg-conv-comp-id: '0'
+    msg-conv-config: ''
+    msg-conv-msg2p-lib: ''
+    msg-conv-payload-type: '0'
+    multiple-payloads: 'False'
+    new-api: 'False'
+    sync: 'True'
+    topic: 'mqtt'
+name: Cloud Message Converter and Broker

@@ -23,6 +23,12 @@ dependencies:
 - extension: NvDsMuxDemuxExt
   uuid: 89b8398c-5820-4051-835c-a91f2d49766b
   version: 1.3.0
+- extension: NvDsInferenceUtilsExt
+  uuid: 27856a43-5ad4-4d8e-be36-0ec2cf9bbb58
+  version: 1.3.0
+- extension: NvDsCloudMsgExt
+  uuid: d16b1366-dba2-47f6-95fc-b09b39f885de
+  version: 1.3.0
 ---
 components:
 - name: face_detector
@@ -143,14 +149,6 @@ ui_property:
     y: 14.148451805114746
 ---
 components:
-- name: Deepstream Data Connection0
-  parameters:
-    source: tracker/video_output
-    target: onscreen_display/video_input
-  type: nvidia::deepstream::NvDsConnection
-name: node0
----
-components:
 - name: New Stream Muxer0
   parameters:
     in-%u: On Request Data Input1
@@ -181,3 +179,77 @@ components:
     target: face_detector/video_input
   type: nvidia::deepstream::NvDsConnection
 name: node1
+---
+components:
+- name: 1-to-N pipe fitting139
+  parameters:
+    in: Static Data Input140
+    out-%u: On Request Data Output141
+  type: nvidia::deepstream::NvDsTee
+- name: Static Data Input140
+  type: nvidia::deepstream::NvDsStaticInput
+- name: On Request Data Output141
+  type: nvidia::deepstream::NvDsOnRequestOutput
+name: 1-to-N pipe fitting
+ui_property:
+  position:
+    x: 846.8145751953125
+    y: 11.693231582641602
+---
+components:
+- name: Deepstream Data Connection142
+  parameters:
+    source: tracker/video_output
+    target: 1-to-N pipe fitting/Static Data Input140
+  type: nvidia::deepstream::NvDsConnection
+name: node133
+---
+components:
+- name: Deepstream Data Connection143
+  parameters:
+    source: 1-to-N pipe fitting/On Request Data Output141
+    target: onscreen_display/video_input
+  type: nvidia::deepstream::NvDsConnection
+name: node134
+---
+components:
+- name: FPS Measurement144
+  parameters:
+    probe-connector: Probe Connector145
+  type: nvidia::deepstream::NvDsFpsMeasurement
+- name: Probe Connector145
+  type: nvidia::deepstream::NvDsProbeConnector
+name: FPS Measurement
+ui_property:
+  position:
+    x: 1233.598388671875
+    y: 44.22748947143555
+---
+components:
+- name: Probe Monitor146
+  parameters:
+    io: 1-to-N pipe fitting/On Request Data Output141
+    probe-connector: FPS Measurement/Probe Connector145
+  type: nvidia::deepstream::NvDsProbe
+name: node135
+---
+components:
+- name: Cloud Message Converter and Broker147
+  parameters:
+    in: Static Data Input148
+  type: nvidia::deepstream::NvDsMsgConvBroker
+- name: Static Data Input148
+  type: nvidia::deepstream::NvDsStaticInput
+name: Cloud Message Converter and Broker
+ui_property:
+  position:
+    x: 1149.84521484375
+    y: -121.33110809326172
+---
+components:
+- name: Deepstream Data Connection149
+  parameters:
+    source: 1-to-N pipe fitting/On Request Data Output141
+    target: Cloud Message Converter and Broker/Static Data Input148
+  type: nvidia::deepstream::NvDsConnection
+name: node136

@@ -1,0 +1,60 @@
+%YAML 1.2
+################################################################################
+# Copyright (c) 2021-2023, NVIDIA CORPORATION. All rights reserved.
+#
+# NVIDIA Corporation and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA Corporation is strictly prohibited.
+#
+################################################################################
+---
+# final stage
+unique_stage: final_image
+base_image: auto
+stage_model: clean_stage
+
+local_copy_files:
+- src: "/opt/nvidia/graph-composer/graph_composer-3.0.0_arm64.deb"
+  dst: "/tmp/"
+- src: "surveillance.parameters.yaml"
+  dst: "/workspace/surveillance/" # ends with '/' is folder
+
+# need to modify
+resources_files:
+- resources.yaml
+
+apt_deps:
+- rsync
+- libyaml-cpp-dev
+- python3-yaml
+
+custom_runs:
+ - "apt install -y /tmp/graph_composer-3.0.0_arm64.deb && rm -rf /tmp/graph_composer-3.0.0_arm64.deb"
+ - "chmod 1777 /tmp && /opt/nvidia/deepstream/deepstream/user_additional_install.sh" # Additional packages needed to run the app
+
+work_folder: /workspace/surveillance/
+
+env_list:
+  PATH: "/opt/nvidia/graph-composer/:$PATH"
+  LD_LIBRARY_PATH: "/opt/nvidia/graph-composer/:$LD_LIBRARY_PATH"
+  DISPLAY: ":0"
+
+# Setup entrypoint
+entrypoint:
+- "gxe"
+- "--manifest"
+- "surveillance_manifest.yaml"
+- "--app"
+- "surveillance.yaml,surveillance.parameters.yaml"
+---
+# Container Builder Config
+container_builder: main # required
+graph:
+  graph_files: [ surveillance.yaml ]
+  graph_dst: /workspace/surveillance/
+  manifest_dst: /workspace/surveillance/surveillance_manifest.yaml
+  ext_install_root: /workspace/surveillance/
+docker_build:
+    image_name: <docker-container-registry>:surveillance-jetson

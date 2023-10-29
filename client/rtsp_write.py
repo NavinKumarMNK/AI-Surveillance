@@ -7,7 +7,7 @@ import queue
 
 PORT = 8555
 TYPE = 265  # 264
-PUBLISH_IP = "192.168.250.183"
+PUBLISH_IP = "192.168.1.4"
 
 fps = 6
 width = 1920
