@@ -25,7 +25,7 @@ __model__ = {
 class FaceModel(L.LightningModule):
     def __init__(self, model: str, backbone_path: str, input_size: int,
                  num_classes: int, loss_config, pretrained: bool, 
-                 lr: float=1e-3,
+                 lr: float=1e-3, momentum: float=0.9,
                  emb_dim: int=512):
         super(FaceModel, self).__init__()
         self.backbone: Union[EfficientNetv2, IRSeNet, MobileNet] = __model__[model](
@@ -35,11 +35,13 @@ class FaceModel(L.LightningModule):
         self.input_size = input_size
         self.backbone_path = backbone_path
         self.learning_rate = lr
+        self.momentum = momentum
         self.arcface = ArcFaceLoss(**loss_config,
                                    num_classes=num_classes,
                                    emb_dim=emb_dim)
         self.loss = torch.nn.CrossEntropyLoss()
         self.save_hyperparameters()    
+        self.backbone.train()
 
     def forward(self, x):
         x = self.backbone(x)
@@ -60,12 +62,39 @@ class FaceModel(L.LightningModule):
         loss = self.loss(logits,y)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
-
+    
+    
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=5e-4)
+        if not isinstance(self.backbone, list):
+            backbone = [*self.backbone.modules()]
+        paras_only_bn = []
+        paras_wo_bn = []
+        for layer in backbone:
+            if 'model' in str(layer.__class__):
+                continue
+            if 'container' in str(layer.__class__):
+                continue
+            else:
+                if 'batchnorm' in str(layer.__class__):
+                    paras_only_bn.extend([*layer.parameters()])
+                else:
+                    paras_wo_bn.extend([*layer.parameters()])
+        
+        if isinstance(self.backbone, MobileNet):
+            self.optimizer = torch.optim.SGD([
+                                {'params': paras_wo_bn[:-1], 'weight_decay': 4e-5},
+                                {'params': [paras_wo_bn[-1]] + [self.arcface.kernel], 'weight_decay': 4e-4},
+                                {'params': paras_only_bn}
+                            ], lr = self.learning_rate, momentum = self.momentum)
+        else:
+            self.optimizer = torch.optim.SGD([
+                                {'params': paras_wo_bn + [self.arcface.kernel], 'weight_decay': 5e-4},
+                                {'params': paras_only_bn}
+                            ], lr = self.learning_rate, momentum = self.momentum)
+        
         #optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
-        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=4, gamma=0.1)
+        return {'optimizer': self.optimizer, 'lr_scheduler': self.scheduler}
     
     def save_model(self) -> str:
         self.backbone.save_model(self.backbone_path+'.pt')
@@ -124,4 +153,3 @@ class FaceModel(L.LightningModule):
             with open(self.backbone_path + '.trt', 'wb') as f:
                 f.write(engine.serialize())
                 
-            

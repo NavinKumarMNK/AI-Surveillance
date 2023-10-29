@@ -60,8 +60,7 @@ class Train():
             if self.method == 'avg':
                 embeddings = np.array(embeddings)
                 embeddings = np.mean(embeddings, axis=0)
-                
-                
+            
                 res = [{
                     'payload': {'label' : folder_label},
                     'vector': embeddings.tolist()
@@ -113,7 +112,6 @@ class Train():
                 model_path=path,
             )
 
-        
 class Inference():    
     def __init__(self, ckpt_path, device): 
         self.device = device
@@ -157,6 +155,6 @@ async def inference():
     print(pred)
     
 if __name__ == '__main__':
-    run(train=False)
-    asyncio.run(inference())
+    run(train=True)
+    #asyncio.run(inference())
     

@@ -51,6 +51,7 @@ all: $(TARGET_LIB)
 
 $(TARGET_LIB) : $(TARGET_OBJS)
 	$(CC) -o $@  $(TARGET_OBJS) $(LFLAGS)
-
+	make clean
+	
 clean:
 	rm -rf $(TARGET_LIB) *.o

@@ -6,29 +6,27 @@ general:
 
 wandb:
   project: arcface
-  name: irsenet
-  tags: ['irsenet', 'arcface']
+  name: efficientnet
+  tags: ['efficientnet', 'arcface']
   credentials: "wandb.env" # intialize credentials in this file
   save_dir: /workspace/SurveillanceAI/src/arcface/logs
   registry:
   - name: "face"
 
 model:
-  type: irsenet
-  irsenet:
+  type: efficientnet
+  efficientnet:
     input_size: 112
-    backbone_path: /workspace/SurveillanceAI/src/arcface/weights/irsenet
-    pretrained: false
-    lr : 0.0001
+    backbone_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet
+    pretrained: true
+    lr : 0.001
+    momentum : 0.9
   
-
 loss:
   type: arcface
   arcface:
-    s: 64.0  # scale
-    m1: 1   # margin
-    m2: 0.5
-    m3: 0.35
+    s: 30.0  # scale
+    m: 0.35  # margin
 
 data:
   path: /workspace/SurveillanceAI/src/arcface/data/faces
@@ -64,7 +62,7 @@ train:
     enable_progress_bar: true
     default_root_dir: /workspace/SurveillanceAI/src/arcface/logs
     max_epochs: 100
-    min_epochs: 1
+    min_epochs: 10
     precision: 16-mixed
     accumulate_grad_batches: 1
 
@@ -73,14 +71,13 @@ train_pipeline:
   post_training: true
   push_registry: false
   device: cuda
-  model_path: /workspace/SurveillanceAI/src/arcface/weights/irsenet
-  payload_map: /workspace/SurveillanceAI/src/arcface/data/label_map.csv
+  model_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet
+  method: "all"
+  data_path: /workspace/SurveillanceAI/src/arcface/data/faces
   compile_bs: 32 # batch size for compilation
-  upload_size: 1000 # number of vectors to upload at once
-
-
+  
 inference_pipeline:
-  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/irsenet.pt
+  ckpt_path: /workspace/SurveillanceAI/src/arcface/weights/efficientnet.pt
   device: cuda
 
 vector-db:

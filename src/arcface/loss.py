@@ -35,6 +35,7 @@ class ArcFaceLoss(torch.nn.Module):
         cond_v = cos_theta - self.threshold
         cond_mask = cond_v <= 0
         keep_val = (cos_theta - self.mm)
+        cos_theta_m = cos_theta_m.to(dtype=keep_val.dtype)
         # print(cos_theta_m.dtype, keep_val.dtype)
         cos_theta_m[cond_mask] = keep_val[cond_mask]
         output = cos_theta * 1.0
